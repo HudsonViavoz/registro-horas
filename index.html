@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro de Horas — Obras</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --bg2:       #181c27;
+      --bg3:       #1e2333;
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+      --text:      #e8eaf2;
+      --muted:     #7a8099;
+      --accent:    #f0a500;
+      --accent2:   #ffd166;
+      --danger:    #e05a5a;
+      --success:   #4caf88;
+      --info:      #4a9eff;
+      --radius:    10px;
+      --radius-lg: 16px;
+      --font:      'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── LOADING OVERLAY ── */
+    #overlay-loading {
+      position: fixed; inset: 0;
+      background: rgba(15,17,23,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #overlay-loading.oculto { display: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TELA DE AUTENTICAÇÃO ── */
+    #screen-auth {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .auth-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      width: 100%; max-width: 400px;
+    }
+    .auth-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 1.8rem;
+    }
+    .auth-logo .logo {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: #000;
+    }
+    .auth-logo h1 { font-size: 16px; font-weight: 600; }
+    .auth-logo p  { font-size: 12px; color: var(--muted); }
+
+    .auth-tabs {
+      display: flex; gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .auth-tab {
+      padding: 7px 18px;
+      font-size: 13px; font-weight: 500;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+
+    .auth-field { margin-bottom: 1rem; }
+    .auth-field label {
+      display: block;
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+    .auth-field input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 13px; font-family: var(--font);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .auth-field input:focus { border-color: var(--accent); }
+    .auth-field input::placeholder { color: var(--muted); }
+
+    .btn-auth {
+      width: 100%;
+      background: var(--accent); color: #000;
+      border: none; border-radius: var(--radius);
+      padding: 11px; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-top: 0.5rem;
+      transition: background 0.15s;
+    }
+    .btn-auth:hover { background: var(--accent2); }
+
+    .auth-link {
+      text-align: center; margin-top: 12px;
+      font-size: 12px; color: var(--muted);
+    }
+    .auth-link span {
+      color: var(--accent); cursor: pointer; text-decoration: underline;
+    }
+    .auth-link span:hover { color: var(--accent2); }
+    .auth-erro {
+      font-size: 12px; color: var(--danger);
+      margin-top: 8px; text-align: center; min-height: 18px;
+    }
+    .auth-sucesso {
+      font-size: 12px; color: var(--success);
+      margin-top: 8px; text-align: center; min-height: 18px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.2rem 2rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    header .logo {
+      width: 36px; height: 36px;
+      background: var(--accent); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #000; flex-shrink: 0;
+    }
+    header h1 { font-size: 17px; font-weight: 600; color: var(--text); }
+    header p  { font-size: 12px; color: var(--muted); }
+
+    .btn-dados {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 7px 14px;
+      cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-dados:hover { border-color: var(--accent); background: rgba(240,165,0,0.08); }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #000; flex-shrink: 0;
+    }
+    .avatar.vazio { background: var(--bg3); border: 1px dashed var(--border2); color: var(--muted); }
+    .btn-dados-info { text-align: left; }
+    .btn-dados-info .nome-usuario { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+    .btn-dados-info .setor-usuario { font-size: 11px; color: var(--muted); line-height: 1.2; }
+    .btn-dados-lbl  { font-size: 11px; color: var(--muted); }
+
+    .btn-logout {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--muted); border-radius: var(--radius);
+      padding: 7px 14px; font-size: 12px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s; flex-shrink: 0;
+    }
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* badge admin no header */
+    .badge-admin {
+      background: rgba(74,158,255,0.15); color: var(--info);
+      border: 1px solid rgba(74,158,255,0.3);
+      border-radius: 6px; padding: 2px 10px;
+      font-size: 11px; font-weight: 600; flex-shrink: 0;
+    }
+
+    /* ── PAINEL DADOS ── */
+    #painel-dados {
+      background: var(--bg2);
+      border-bottom: 2px solid var(--accent);
+      display: none;
+    }
+    .painel-dados-inner { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; }
+    .painel-dados-inner h3 {
+      font-size: 13px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .painel-dados-inner h3::before {
+      content: ''; display: inline-block;
+      width: 3px; height: 13px;
+      background: var(--accent); border-radius: 2px;
+    }
+    .dados-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px; margin-bottom: 1.2rem;
+    }
+    .painel-dados-inner .field input {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: var(--radius);
+      color: var(--text); padding: 9px 12px;
+      font-size: 13px; font-family: var(--font); outline: none;
+      transition: border-color 0.15s;
+    }
+    .painel-dados-inner .field input:focus { border-color: var(--accent); }
+    .painel-dados-inner .field label {
+      display: block; font-size: 11px; color: var(--muted);
+      margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .dados-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-salvar-dados {
+      background: var(--accent); color: #000; border: none;
+      border-radius: var(--radius); padding: 9px 22px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-salvar-dados:hover { background: var(--accent2); }
+    .btn-cancelar-dados {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--muted); border-radius: var(--radius);
+      padding: 9px 16px; font-size: 13px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-cancelar-dados:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── LAYOUT PRINCIPAL ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* ── BANNER PERFIL ── */
+    #banner-perfil {
+      background: rgba(240,165,0,0.10);
+      border: 1px solid rgba(240,165,0,0.3);
+      border-radius: var(--radius); padding: 10px 16px;
+      margin-bottom: 1.5rem; font-size: 13px; color: var(--accent2);
+      display: flex; align-items: center; gap: 10px;
+    }
+    #banner-perfil.oculto { display: none; }
+    #banner-perfil button {
+      background: var(--accent); color: #000; border: none;
+      border-radius: 6px; padding: 4px 12px;
+      font-size: 12px; font-weight: 600; cursor: pointer; margin-left: auto;
+    }
+
+    /* ── FORMULÁRIO ── */
+    .form-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .form-card h2 {
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
+    }
+    .form-card h2::before {
+      content: ''; display: inline-block;
+      width: 3px; height: 14px;
+      background: var(--accent); border-radius: 2px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 140px;
+      gap: 10px; align-items: end;
+    }
+    .field label {
+      display: block; font-size: 11px; color: var(--muted);
+      margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .field input {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: var(--radius);
+      color: var(--text); padding: 9px 12px;
+      font-size: 13px; font-family: var(--font); outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus   { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+    .btn-add {
+      background: var(--accent); color: #000; border: none;
+      border-radius: var(--radius); padding: 9px 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; height: 38px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-add:hover  { background: var(--accent2); }
+    .btn-add:active { transform: scale(0.97); }
+    .btn-add.editando { background: var(--info); color: #fff; }
+    .btn-add.editando:hover { background: #6ab4ff; }
+
+    .btn-cancelar-edicao {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--muted); border-radius: var(--radius);
+      padding: 9px 14px; font-size: 13px; cursor: pointer;
+      height: 38px; white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-cancelar-edicao:hover { border-color: var(--text); color: var(--text); }
+
+    .form-card.editando { border-color: var(--info); }
+    .form-card.editando h2 { color: var(--info); }
+    .form-card.editando h2::before { background: var(--info); }
+
+    /* ── BUSCA DE CARDS ── */
+    .busca-cards {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 1rem;
+    }
+    .busca-cards input {
+      flex: 1;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); color: var(--text);
+      padding: 9px 12px; font-size: 13px; font-family: var(--font);
+      outline: none; transition: border-color 0.15s;
+    }
+    .busca-cards input:focus { border-color: var(--accent); }
+    .busca-cards input::placeholder { color: var(--muted); }
+    .resumo-card.oculto-busca { display: none; }
+    #followup-card {
+      background: var(--bg2);
+      border: 1px solid rgba(240,165,0,0.3);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-lg); padding: 1rem 1.5rem; margin-bottom: 2rem;
+    }
+    #followup-card.oculto { display: none; }
+    #followup-card h2 {
+      font-size: 13px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.8rem;
+    }
+    .followup-lista { display: flex; flex-direction: column; gap: 6px; }
+    .followup-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg3); border-radius: var(--radius); padding: 7px 12px; gap: 12px;
+    }
+    .followup-data  { font-size: 13px; font-weight: 500; color: var(--text); min-width: 110px; }
+    .followup-dia   { font-size: 11px; color: var(--muted); }
+    .btn-followup {
+      background: var(--accent); color: #000; border: none;
+      border-radius: 6px; padding: 4px 14px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-followup:hover { background: var(--accent2); }
+
+    /* ── ABAS ── */
+    .tabs {
+      display: flex; gap: 4px;
+      border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
+    }
+    .tab {
+      padding: 8px 18px; font-size: 13px; font-weight: 500;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s; user-select: none;
+    }
+    .tab:hover  { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab.admin  { color: var(--info); }
+    .tab.admin.active { color: var(--info); border-bottom-color: var(--info); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── FILTROS ── */
+    .filtros-rapidos {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .btn-periodo {
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--muted); border-radius: 20px; padding: 5px 14px;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-periodo:hover { border-color: var(--accent); color: var(--text); }
+    .btn-periodo.ativo { background: rgba(240,165,0,0.15); border-color: var(--accent); color: var(--accent); }
+
+    .filters {
+      display: flex; gap: 10px; align-items: flex-end;
+      margin-bottom: 1.2rem; flex-wrap: wrap;
+    }
+    .filters .field { flex: 1; min-width: 140px; }
+    .btn-filter {
+      background: var(--bg3); color: var(--text);
+      border: 1px solid var(--border2); border-radius: var(--radius);
+      padding: 9px 16px; font-size: 12px; cursor: pointer;
+      height: 38px; transition: background 0.15s;
+    }
+    .btn-filter:hover { background: var(--border2); }
+
+    .field-select {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: var(--radius);
+      color: var(--text); padding: 9px 12px;
+      font-size: 13px; font-family: var(--font); outline: none;
+      transition: border-color 0.15s; cursor: pointer; appearance: none;
+    }
+    .field-select:focus { border-color: var(--accent); }
+    .field-select option { background: var(--bg3); color: var(--text); }
+
+        /* ── TABELA ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--bg3); }
+    th {
+      padding: 10px 14px; text-align: left;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--muted); font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    th:hover { color: var(--text); }
+    th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 10px; }
+    td {
+      padding: 10px 14px; font-size: 13px;
+      border-bottom: 1px solid var(--border); color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,0.025); }
+    tr.editando-linha td { background: rgba(74,158,255,0.06) !important; }
+
+    .badge-horas {
+      display: inline-block;
+      background: rgba(240,165,0,0.15); color: var(--accent);
+      border-radius: 6px; padding: 2px 10px;
+      font-weight: 600; font-size: 12px;
+    }
+
+    .btn-edit {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 2px 6px;
+      border-radius: 6px; transition: color 0.15s, background 0.15s;
+    }
+    .btn-edit:hover { color: var(--info); background: rgba(74,158,255,0.12); }
+
+    .btn-del {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 2px 6px;
+      border-radius: 6px; transition: color 0.15s, background 0.15s;
+    }
+    .btn-del:hover { color: var(--danger); background: rgba(224,90,90,0.12); }
+
+    .btn-rep {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 2px 6px;
+      border-radius: 6px; transition: color 0.15s, background 0.15s;
+    }
+    .btn-rep:hover { color: var(--success); background: rgba(76,175,136,0.12); }
+
+    .empty {
+      text-align: center; padding: 2.5rem; color: var(--muted); font-size: 13px;
+    }
+    .empty strong { display: block; font-size: 15px; margin-bottom: 4px; color: var(--text); opacity: 0.4; }
+
+    /* ── RESUMO ── */
+    .resumo-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;
+    }
+    .resumo-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1rem 1.2rem;
+    }
+    .resumo-card .nome {
+      font-weight: 600; font-size: 14px; margin-bottom: 8px; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .resumo-card .total-h { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .resumo-card .sub-info { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .resumo-card .bar-wrap {
+      height: 4px; background: var(--border2); border-radius: 2px; margin-top: 10px; overflow: hidden;
+    }
+    .resumo-card .bar-fill {
+      height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease;
+    }
+    /* card de obra clicável */
+    .resumo-card.clicavel {
+      cursor: pointer; transition: border-color 0.15s, transform 0.1s;
+    }
+    .resumo-card.clicavel:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .resumo-card.clicavel.selecionado { border-color: var(--accent); background: rgba(240,165,0,0.06); }
+
+    /* painel de detalhe da obra */
+    #detalhe-obra {
+      margin-top: 1.5rem;
+      background: var(--bg2);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem 1.5rem;
+    }
+    #detalhe-obra.oculto { display: none; }
+    #detalhe-colab.oculto { display: none; }
+    #detalhe-obra .detalhe-header,
+    #detalhe-colab .detalhe-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 1rem;
+    }
+    #detalhe-obra .detalhe-titulo {
+      font-size: 15px; font-weight: 600; color: var(--accent);
+    }
+    #detalhe-obra .detalhe-fechar {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--muted); border-radius: 6px;
+      padding: 4px 12px; font-size: 12px; cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #detalhe-obra .detalhe-fechar:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── RODAPÉ ── */
+    .footer-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 1.5rem; padding: 1rem 1.2rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg2); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      gap: 10px; flex-wrap: wrap;
+    }
+    .footer-resumo { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+    .footer-bloco  { display: flex; flex-direction: column; gap: 2px; }
+    .footer-label  { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .footer-valor-reg   { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1; }
+    .footer-valor-horas { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .footer-sep    { font-size: 20px; color: var(--border2); align-self: center; }
+
+    .btn-export {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text); border-radius: var(--radius);
+      padding: 8px 16px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-export:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--success); color: #fff;
+      padding: 10px 18px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none; z-index: 9000;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── CHAT ── */
+    .btn-chat {
+      position: relative;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 7px 12px;
+      font-size: 18px; cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-chat:hover { border-color: var(--accent); background: rgba(240,165,0,0.08); }
+    .chat-badge {
+      position: absolute; top: -6px; right: -6px;
+      background: var(--danger); color: #fff;
+      border-radius: 50%; min-width: 18px; height: 18px;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+      box-shadow: 0 0 0 2px var(--bg2);
+      animation: pulse-badge 1s ease-in-out 3;
+    }
+    @keyframes pulse-badge {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.3); }
+    }
+    #chat-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+    }
+    #chat-box {
+      position: fixed; right: 0; top: 0; bottom: 0;
+      width: 380px; max-width: 100vw;
+      background: var(--bg2); border-left: 1px solid var(--border);
+      z-index: 1001; display: flex; flex-direction: column;
+    }
+    #chat-header {
+      display: flex; align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding: 0 8px 0 0; flex-shrink: 0;
+    }
+    #chat-tabs { display: flex; flex: 1; overflow-x: auto; }
+    .chat-tab {
+      padding: 12px 14px; font-size: 12px; font-weight: 500;
+      color: var(--muted); background: none; border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .chat-tab:hover { color: var(--text); }
+    .chat-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    #chat-fechar {
+      background: none; border: none; color: var(--muted);
+      font-size: 16px; cursor: pointer; padding: 8px;
+      flex-shrink: 0;
+    }
+    #chat-fechar:hover { color: var(--text); }
+    #chat-canal-info {
+      display: flex; align-items: center;
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; background: var(--bg3);
+    }
+    #chat-lista-obras, #chat-lista-usuarios {
+      flex: 1; overflow-y: auto; padding: 8px;
+    }
+    .chat-lista-item {
+      padding: 10px 14px; border-radius: var(--radius);
+      cursor: pointer; font-size: 13px; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .chat-lista-item:hover { background: var(--bg3); }
+    .chat-lista-badge {
+      background: var(--danger); color: #fff;
+      border-radius: 10px; padding: 1px 7px;
+      font-size: 10px; font-weight: 700;
+    }
+    #chat-mensagens {
+      flex: 1; overflow-y: auto;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .msg-linha {
+      display: flex; flex-direction: column; max-width: 80%;
+    }
+    .msg-linha.minha { align-self: flex-end; align-items: flex-end; }
+    .msg-linha.deles  { align-self: flex-start; align-items: flex-start; }
+    .msg-nome { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+    .msg-balao {
+      padding: 8px 12px; border-radius: 12px;
+      font-size: 13px; line-height: 1.4; word-break: break-word;
+    }
+    .msg-linha.minha .msg-balao { background: var(--accent); color: #000; border-bottom-right-radius: 3px; }
+    .msg-linha.deles  .msg-balao { background: var(--bg3); color: var(--text); border-bottom-left-radius: 3px; }
+    .msg-hora { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    #chat-input-area {
+      display: flex; gap: 8px; padding: 10px 12px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    #chat-input {
+      flex: 1; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: var(--radius);
+      color: var(--text); padding: 9px 12px;
+      font-size: 13px; font-family: var(--font); outline: none;
+    }
+    #chat-input:focus { border-color: var(--accent); }
+    #chat-send {
+      background: var(--accent); color: #000; border: none;
+      border-radius: var(--radius); padding: 9px 14px;
+      font-size: 14px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    #chat-send:hover { background: var(--accent2); }
+    .chat-separador {
+      text-align: center; font-size: 11px; color: var(--muted);
+      margin: 4px 0;
+    }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      header { padding: 1rem; }
+      .container { padding: 1rem; }
+    }
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="overlay-loading"><div class="spinner"></div></div>
+
+<!-- ═══════════════════ TELA DE LOGIN ═══════════════════ -->
+<div id="screen-auth" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <img src="data:image/png;base64,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" 
+           alt="Viavoz Projetos" 
+           style="height:56px; " />
+      <div>
+        <h1>Registro de Horas</h1>
+        <p>Acesse sua conta para continuar</p>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="trocarAuthTab('login', this)">Entrar</div>
+      <div class="auth-tab" onclick="trocarAuthTab('cadastro', this)">Criar conta</div>
+    </div>
+
+    <!-- Login -->
+    <div id="form-login" class="auth-form active">
+      <div class="auth-field">
+        <label>E-mail</label>
+        <input type="email" id="auth-email" placeholder="seu@email.com" />
+      </div>
+      <div class="auth-field">
+        <label>Senha</label>
+        <input type="password" id="auth-senha" placeholder="••••••••" />
+      </div>
+      <div class="auth-erro" id="login-erro"></div>
+      <button class="btn-auth" onclick="fazerLogin()">Entrar</button>
+      <div class="auth-link">
+        Esqueceu a senha? <span onclick="mostrarResetSenha()">Recuperar acesso</span>
+      </div>
+    </div>
+
+    <!-- Recuperar senha -->
+    <div id="form-reset" class="auth-form">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">
+        Informe seu e-mail e enviaremos um link para você criar uma nova senha.
+      </p>
+      <div class="auth-field">
+        <label>E-mail</label>
+        <input type="email" id="reset-email" placeholder="seu@email.com" />
+      </div>
+      <div class="auth-erro"   id="reset-erro"></div>
+      <div class="auth-sucesso" id="reset-ok"></div>
+      <button class="btn-auth" onclick="enviarResetSenha()">Enviar link de recuperação</button>
+      <div class="auth-link">
+        <span onclick="voltarLogin()">← Voltar para o login</span>
+      </div>
+    </div>
+
+    <!-- Nova senha (após clicar no link do e-mail) -->
+    <div id="form-nova-senha" class="auth-form">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">
+        Digite sua nova senha abaixo.
+      </p>
+      <div class="auth-field">
+        <label>Nova senha</label>
+        <input type="password" id="nova-senha" placeholder="mínimo 6 caracteres" />
+      </div>
+      <div class="auth-field">
+        <label>Confirmar nova senha</label>
+        <input type="password" id="nova-senha-conf" placeholder="repita a senha" />
+      </div>
+      <div class="auth-erro" id="nova-senha-erro"></div>
+      <button class="btn-auth" onclick="salvarNovaSenha()">Salvar nova senha</button>
+    </div>
+
+    <!-- Cadastro -->
+    <div id="form-cadastro" class="auth-form">
+      <div class="auth-field">
+        <label>E-mail</label>
+        <input type="email" id="cad-email" placeholder="seu@email.com" />
+      </div>
+      <div class="auth-field">
+        <label>Senha</label>
+        <input type="password" id="cad-senha" placeholder="mínimo 6 caracteres" />
+      </div>
+      <div class="auth-field">
+        <label>Confirmar senha</label>
+        <input type="password" id="cad-conf" placeholder="repita a senha" />
+      </div>
+      <div class="auth-erro" id="cad-erro"></div>
+      <button class="btn-auth" onclick="fazerCadastro()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TELA DO APP ═══════════════════ -->
+<div id="screen-app" style="display:none">
+
+  <!-- CABEÇALHO -->
+  <header>
+    <div class="logo">H</div>
+    <div>
+      <h1>Registro de Horas por Obra</h1>
+      <p>Controle diário de horas dos colaboradores</p>
+    </div>
+    <span class="badge-admin" id="badge-admin" style="display:none">Admin</span>
+    <!-- Botão Chat -->
+    <button class="btn-chat" id="btn-chat" onclick="toggleChat()" title="Chat">
+      💬
+      <span class="chat-badge" id="chat-badge" style="display:none">0</span>
+    </button>
+    <button class="btn-dados" onclick="togglePainelDados()">
+      <div class="avatar vazio" id="header-avatar">?</div>
+      <div class="btn-dados-info">
+        <div class="nome-usuario" id="header-nome">Identificar-se</div>
+        <div class="setor-usuario" id="header-setor">clique para preencher</div>
+      </div>
+      <span class="btn-dados-lbl">Dados</span>
+    </button>
+    <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+  </header>
+
+  <!-- PAINEL DE DADOS -->
+  <div id="painel-dados">
+    <div class="painel-dados-inner">
+      <h3>Meus Dados</h3>
+      <div class="dados-grid">
+        <div class="field"><label for="d-nome">Nome completo</label><input type="text" id="d-nome" placeholder="Ex: João Silva" /></div>
+        <div class="field">
+          <label for="d-setor">Setor</label>
+          <select id="d-setor" class="field-select">
+            <option value="">Selecione o setor...</option>
+            <option>CIVIL 1</option>
+            <option>CIVIL 2</option>
+            <option>CIVIL 4</option>
+            <option>COMPATIBILIZAÇÃO</option>
+            <option>COORDENAÇÃO</option>
+            <option>DRENAGEM</option>
+            <option>DRONE/TOPOGRAFIA</option>
+            <option>ELÉTRICA</option>
+            <option>ESTRUTURAL</option>
+            <option>HIDRO</option>
+            <option>INFRAESTRUTURA</option>
+            <option>MEIO AMBIENTE</option>
+            <option>ORÇAMENTO</option>
+            <option>REURB</option>
+            <option>SANEAMENTO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="d-andar">Andar</label>
+          <select id="d-andar" class="field-select">
+            <option value="">Selecione o andar...</option>
+            <option>3º andar</option>
+            <option>4º andar</option>
+            <option>5º andar</option>
+            <option>6º andar</option>
+            <option>7º andar</option>
+            <option>8º andar</option>
+            <option>9º andar</option>
+            <option>10º andar</option>
+            <option>11º andar</option>
+            <option>12º andar</option>
+            <option>13º andar</option>
+          </select>
+        </div>
+        <div class="field"><label for="d-lider">Líder / Responsável</label><input type="text" id="d-lider" placeholder="Nome do líder" /></div>
+        <div class="field"><label for="d-email">E-mail</label><input type="email" id="d-email" placeholder="seu@email.com" /></div>
+        <div class="field"><label for="d-ramal">Ramal</label><input type="text" id="d-ramal" placeholder="Ex: 1234" maxlength="6" /></div>
+      </div>
+      <div class="dados-actions">
+        <button class="btn-salvar-dados" onclick="salvarPerfil()">Salvar</button>
+        <button class="btn-cancelar-dados" onclick="fecharPainelDados()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div class="container">
+
+    <div id="banner-perfil">
+      ⚠ Preencha seus dados de identificação para começar a registrar.
+      <button onclick="abrirPainelDados()">Preencher agora</button>
+    </div>
+
+    <!-- FORMULÁRIO DE REGISTRO -->
+    <div class="form-card" id="form-card">
+      <h2 id="form-titulo">Novo Registro</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Colaborador</label>
+          <input type="text" id="inp-colab" readonly style="cursor:not-allowed;opacity:0.7;" />
+          <datalist id="list-colab"></datalist>
+        </div>
+        <div class="field">
+          <label>Obra / Projeto</label>
+          <input type="text" id="inp-obra" placeholder="Nome da obra" autocomplete="off" list="list-obra" />
+          <datalist id="list-obra"></datalist>
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="inp-data" />
+        </div>
+        <div class="field">
+          <label>Horas</label>
+          <input type="text" id="inp-horas" placeholder="ex: 8:30" maxlength="5" autocomplete="off"
+            style="font-variant-numeric:tabular-nums;letter-spacing:0.03em;" />
+          <span id="inp-horas-erro" style="display:none;font-size:11px;color:var(--danger);margin-top:3px;"></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end;margin-top:10px;">
+        <div class="field">
+          <label>Disciplina</label>
+          <select id="inp-disciplina" class="field-select">
+            <option value="">Selecione...</option>
+            <option>ARQUITETURA</option>
+            <option>AUTOMAÇÃO</option>
+            <option>CABEAMENTO ESTRUTURADO</option>
+            <option>CFTV</option>
+            <option>CLIMATIZAÇÃO</option>
+            <option>DRENAGEM</option>
+            <option>ELÉTRICO</option>
+            <option>ESTRUTURA DE CONCRETO</option>
+            <option>ESTRUTURA METÁLICA</option>
+            <option>GEOMETRIA</option>
+            <option>HIDROSSANITÁRIO</option>
+            <option>INCÊNDIO</option>
+            <option>LUMINOTÉCNICO</option>
+            <option>MEIO AMBIENTE</option>
+            <option>PAISAGISMO</option>
+            <option>PAVIMENTAÇÃO</option>
+            <option>REURB</option>
+            <option>SANEAMENTO</option>
+            <option>SANEAMENTO COPASA</option>
+            <option>SINALIZAÇÃO</option>
+            <option>SPDA</option>
+            <option>TOPOGRAFIA</option>
+            <option>URBANISMO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Observação</label>
+          <input type="text" id="inp-obs" placeholder="Atividade realizada, comentários..." autocomplete="off" />
+        </div>
+        <button class="btn-cancelar-edicao" id="btn-cancelar-edicao" style="display:none;" onclick="cancelarEdicao()">Cancelar</button>
+        <button class="btn-add" id="btn-add-salvar" onclick="salvarOuAdicionar()">+ Adicionar</button>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UP -->
+    <div id="followup-card" class="oculto">
+      <h2>⚠ Dias sem registro</h2>
+      <div class="followup-lista" id="followup-lista"></div>
+    </div>
+
+    <!-- ABAS -->
+    <div class="tabs" id="tabs-bar">
+      <div class="tab active" onclick="trocarAba('registros', this)">Todos os Registros</div>
+      <div class="tab" onclick="trocarAba('por-colaborador', this)">Por Colaborador</div>
+      <div class="tab" onclick="trocarAba('por-obra', this)">Por Obra</div>
+      <!-- aba admin inserida dinamicamente -->
+    </div>
+
+    <!-- PAINEL: REGISTROS -->
+    <div id="panel-registros" class="panel active">
+      <div class="filtros-rapidos">
+        <button class="btn-periodo" onclick="filtrarPeriodo('hoje',     this)">Hoje</button>
+        <button class="btn-periodo" onclick="filtrarPeriodo('semana',    this)">Esta semana</button>
+        <button class="btn-periodo" onclick="filtrarPeriodo('mes',       this)">Este mês</button>
+        <button class="btn-periodo" onclick="filtrarPeriodo('trimestre', this)">Trimestre</button>
+        <button class="btn-periodo" onclick="filtrarPeriodo('semestre',  this)">Semestre</button>
+      </div>
+      <div class="filters">
+        <div class="field"><label>Data inicial</label><input type="date" id="filtro-de" oninput="desativarPeriodosRapidos()" /></div>
+        <div class="field"><label>Data final</label><input type="date" id="filtro-ate" oninput="desativarPeriodosRapidos()" /></div>
+        <div class="field"><label>Colaborador</label><input type="text" id="filtro-colab" placeholder="Filtrar por nome..." list="list-colab" /></div>
+        <div class="field"><label>Obra</label><input type="text" id="filtro-obra" placeholder="Filtrar por obra..." list="list-obra" /></div>
+        <button class="btn-filter" onclick="renderTabela()">Filtrar</button>
+        <button class="btn-filter" onclick="limparFiltros()">Limpar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th onclick="ordenarPor('data')">Data <span class="sort-icon" id="sort-data">▼</span></th>
+            <th onclick="ordenarPor('colaborador')">Colaborador <span class="sort-icon" id="sort-colaborador"></span></th>
+            <th onclick="ordenarPor('setor')">Setor <span class="sort-icon" id="sort-setor"></span></th>
+            <th onclick="ordenarPor('obra')">Obra / Projeto <span class="sort-icon" id="sort-obra"></span></th>
+            <th onclick="ordenarPor('disciplina')">Disciplina <span class="sort-icon" id="sort-disciplina"></span></th>
+            <th onclick="ordenarPor('horas')">Horas <span class="sort-icon" id="sort-horas"></span></th>
+            <th>Observação</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tabela-body"></tbody>
+        </table>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-resumo">
+          <div class="footer-bloco"><span class="footer-label">Registros</span><span class="footer-valor-reg" id="footer-qtd">—</span></div>
+          <span class="footer-sep">|</span>
+          <div class="footer-bloco"><span class="footer-label">Total de horas</span><span class="footer-valor-horas" id="footer-total">—</span></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-export" onclick="exportarCSV()">↓ Exportar Excel</button>
+          <button class="btn-export" onclick="exportarCSVCompleto()">↓ Exportar Tudo Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL: POR COLABORADOR -->
+    <div id="panel-por-colaborador" class="panel">
+      <div class="busca-cards">
+        <input type="text" id="busca-colab" placeholder="Buscar colaborador..." autocomplete="off"
+          oninput="filtrarCardsColab()" />
+        <button class="btn-filter" onclick="limparBuscaColab()">Limpar</button>
+      </div>
+      <div id="grid-colab" class="resumo-grid"></div>
+      <div class="footer-bar"><span id="footer-colab-total" style="font-size:12px;color:var(--muted);">—</span></div>
+
+      <!-- Detalhe do colaborador selecionado -->
+      <div id="detalhe-colab" class="oculto">
+        <div class="detalhe-header">
+          <span class="detalhe-titulo" id="detalhe-colab-nome"></span>
+          <button class="detalhe-fechar" onclick="fecharDetalheColab()">✕ Fechar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Data</th>
+              <th>Setor</th>
+              <th>Obra / Projeto</th>
+              <th>Disciplina</th>
+              <th>Horas</th>
+              <th>Observação</th>
+            </tr></thead>
+            <tbody id="detalhe-colab-body"></tbody>
+          </table>
+        </div>
+        <div class="footer-bar" style="margin-top:0.8rem;">
+          <div class="footer-resumo">
+            <div class="footer-bloco"><span class="footer-label">Registros</span><span class="footer-valor-reg" id="detalhe-colab-qtd">—</span></div>
+            <span class="footer-sep">|</span>
+            <div class="footer-bloco"><span class="footer-label">Total de horas</span><span class="footer-valor-horas" id="detalhe-colab-total">—</span></div>
+          </div>
+          <button class="btn-export" onclick="exportarDetalheColab()">↓ Exportar Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL: POR OBRA -->
+    <div id="panel-por-obra" class="panel">
+      <div class="busca-cards">
+        <input type="text" id="busca-obra" placeholder="Buscar obra / projeto..." autocomplete="off"
+          oninput="filtrarCardsObra()" />
+        <button class="btn-filter" onclick="limparBuscaObra()">Limpar</button>
+      </div>
+      <div id="grid-obra" class="resumo-grid"></div>
+      <div class="footer-bar"><span id="footer-obra-total" style="font-size:12px;color:var(--muted);">—</span></div>
+
+      <!-- Detalhe da obra selecionada -->
+      <div id="detalhe-obra" class="oculto">
+        <div class="detalhe-header">
+          <span class="detalhe-titulo" id="detalhe-obra-nome"></span>
+          <button class="detalhe-fechar" onclick="fecharDetalheObra()">✕ Fechar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Data</th>
+              <th>Colaborador</th>
+              <th>Setor</th>
+              <th>Disciplina</th>
+              <th>Horas</th>
+              <th>Observação</th>
+            </tr></thead>
+            <tbody id="detalhe-obra-body"></tbody>
+          </table>
+        </div>
+        <div class="footer-bar" style="margin-top:0.8rem;">
+          <div class="footer-resumo">
+            <div class="footer-bloco"><span class="footer-label">Colaboradores</span><span class="footer-valor-reg" id="detalhe-qtd-colab">—</span></div>
+            <span class="footer-sep">|</span>
+            <div class="footer-bloco"><span class="footer-label">Total de horas</span><span class="footer-valor-horas" id="detalhe-total-horas">—</span></div>
+          </div>
+          <button class="btn-export" onclick="exportarDetalheObra()">↓ Exportar Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL: ADMIN (inserido dinamicamente) -->
+    <div id="panel-admin" class="panel">
+
+      <!-- Filtros rápidos de período -->
+      <div class="filtros-rapidos">
+        <button class="btn-periodo" onclick="filtrarPeriodoAdmin('hoje',      this)">Hoje</button>
+        <button class="btn-periodo" onclick="filtrarPeriodoAdmin('semana',    this)">Esta semana</button>
+        <button class="btn-periodo" onclick="filtrarPeriodoAdmin('mes',       this)">Este mês</button>
+        <button class="btn-periodo" onclick="filtrarPeriodoAdmin('trimestre', this)">Trimestre</button>
+        <button class="btn-periodo" onclick="filtrarPeriodoAdmin('semestre',  this)">Semestre</button>
+      </div>
+
+      <!-- Filtros manuais -->
+      <div class="filters">
+        <div class="field"><label>Data inicial</label>
+          <input type="date" id="adm-de" oninput="desativarPeriodosAdmin()" />
+        </div>
+        <div class="field"><label>Data final</label>
+          <input type="date" id="adm-ate" oninput="desativarPeriodosAdmin()" />
+        </div>
+        <div class="field"><label>Colaborador</label>
+          <input type="text" id="adm-colab" placeholder="Filtrar por nome..." list="adm-list-colab" autocomplete="off" />
+          <datalist id="adm-list-colab"></datalist>
+        </div>
+        <div class="field"><label>Obra</label>
+          <input type="text" id="adm-obra" placeholder="Filtrar por obra..." list="adm-list-obra" autocomplete="off" />
+          <datalist id="adm-list-obra"></datalist>
+        </div>
+        <button class="btn-filter" onclick="renderAdmin()">Filtrar</button>
+        <button class="btn-filter" onclick="limparFiltrosAdmin()">Limpar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Data</th><th>Colaborador</th><th>Setor</th><th>Obra / Projeto</th><th>Disciplina</th>
+            <th>Horas</th><th>Observação</th>
+          </tr></thead>
+          <tbody id="admin-body"></tbody>
+        </table>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-resumo">
+          <div class="footer-bloco"><span class="footer-label">Registros</span><span class="footer-valor-reg" id="adm-footer-qtd">—</span></div>
+          <span class="footer-sep">|</span>
+          <div class="footer-bloco"><span class="footer-label">Total de horas</span><span class="footer-valor-horas" id="adm-footer-total">—</span></div>
+        </div>
+        <button class="btn-export" onclick="exportarCSVAdmin()">↓ Exportar Excel</button>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+<!-- ═══════════════════ PAINEL DE CHAT ═══════════════════ -->
+<div id="chat-painel" style="display:none;">
+  <div id="chat-overlay" onclick="fecharChat()"></div>
+  <div id="chat-box">
+    <div id="chat-header">
+      <div id="chat-tabs">
+        <button class="chat-tab active" onclick="abrirCanalChat('geral',this)">💬 Geral</button>
+        <button class="chat-tab" id="btn-tab-obra" onclick="mostrarListaObras()">🏗 Por Obra</button>
+        <button class="chat-tab" id="btn-tab-direto" onclick="mostrarListaUsuarios()">👤 Direto</button>
+      </div>
+      <button id="chat-fechar" onclick="fecharChat()">✕</button>
+    </div>
+
+    <!-- Sub-lista obras -->
+    <div id="chat-lista-obras" style="display:none;">
+      <div id="chat-obras-admin" style="display:none;padding:8px;">
+        <button class="btn-add" style="width:100%;font-size:12px;height:34px;" onclick="mostrarCriarGrupoObra()">+ Criar grupo de obra</button>
+      </div>
+      <div id="chat-criar-grupo" style="display:none;padding:8px;gap:8px;flex-direction:column;">
+        <input type="text" id="chat-nova-obra" placeholder="Nome do grupo..."
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;outline:none;" />
+        <div style="display:flex;gap:8px;">
+          <button class="btn-add" style="flex:1;font-size:12px;height:34px;" onclick="criarGrupoObra()">Criar</button>
+          <button class="btn-filter" style="height:34px;" onclick="document.getElementById('chat-criar-grupo').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+      <div id="chat-obras-items"></div>
+    </div>
+
+    <!-- Sub-lista usuários -->
+    <div id="chat-lista-usuarios" style="display:none;">
+      <div id="chat-usuarios-items"></div>
+    </div>
+
+    <!-- Área de mensagens -->
+    <div id="chat-canal-info" style="display:none;">
+      <button onclick="voltarChatLista()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;">← Voltar</button>
+      <span id="chat-canal-titulo" style="font-size:13px;font-weight:600;color:var(--text);margin-left:8px;"></span>
+    </div>
+    <div id="chat-mensagens"></div>
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Digite uma mensagem..." autocomplete="off" />
+      <button id="chat-send" onclick="enviarMensagem()">➤</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- SheetJS para exportação Excel com múltiplas abas -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- SDK do Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // ═══════════════════════════════════════════════════
+  // CONFIGURAÇÃO SUPABASE
+  // ═══════════════════════════════════════════════════
+  const SUPABASE_URL = 'https://tvvxiypewbephjvonwds.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_t5s5ev6j_npbkE9DokHPAA_5ILdCtiy';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ═══════════════════════════════════════════════════
+  // ESTADO GLOBAL
+  // ═══════════════════════════════════════════════════
+  let dados      = [];    // registros do usuário logado
+  let dadosAdmin = [];    // todos os registros (admin)
+  let perfil     = {};
+  let currentUser = null;
+  let isAdmin    = false;
+  let sortCol    = 'data';
+  let sortAsc    = false;
+  let editandoId = null;
+
+  // ═══════════════════════════════════════════════════
+  // UI: TELAS E LOADING
+  // ═══════════════════════════════════════════════════
+  function mostrarLoading(v) {
+    document.getElementById('overlay-loading').classList.toggle('oculto', !v);
+  }
+
+  function mostrarAuth() {
+    document.getElementById('screen-auth').style.display = 'flex';
+    document.getElementById('screen-app').style.display  = 'none';
+  }
+
+  function mostrarApp() {
+    document.getElementById('screen-auth').style.display = 'none';
+    document.getElementById('screen-app').style.display  = 'block';
+    aplicarPerfil();
+
+    // Limpa estado de todos os painéis e abas antes de decidir o que mostrar
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tabAdmin = document.getElementById('tab-admin');
+    if (tabAdmin) tabAdmin.remove();
+
+    if (isAdmin) {
+      // Admin: esconde formulário, follow-up e banner
+      document.getElementById('form-card').style.display     = 'none';
+      document.getElementById('followup-card').classList.add('oculto');
+      document.getElementById('banner-perfil').classList.add('oculto');
+      document.getElementById('badge-admin').style.display   = 'inline';
+
+      // Adiciona aba Admin
+      const t = document.createElement('div');
+      t.id          = 'tab-admin';
+      t.className   = 'tab admin active';
+      t.textContent = 'Painel Admin';
+      t.onclick     = function() { trocarAba('admin', this); };
+      document.getElementById('tabs-bar').appendChild(t);
+
+      document.getElementById('panel-admin').classList.add('active');
+      carregarDadosAdmin().then(() => renderAdmin());
+      setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
+      iniciarSubGlobal();
+
+    } else {
+      document.getElementById('form-card').style.display   = '';
+      document.getElementById('badge-admin').style.display = 'none';
+      document.querySelector('.tab').classList.add('active');
+      document.getElementById('panel-registros').classList.add('active');
+      renderTudo();
+      if (!perfil.nome) abrirPainelDados();
+      setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
+      iniciarSubGlobal();
+    }
+  }
+
+  function trocarAuthTab(id, el) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('form-' + id).classList.add('active');
+    document.getElementById('login-erro').textContent = '';
+    document.getElementById('cad-erro').textContent   = '';
+  }
+
+  // ═══════════════════════════════════════════════════
+  // AUTENTICAÇÃO
+  // ═══════════════════════════════════════════════════
+
+  // Wrapper com timeout para qualquer promise
+  function comTimeout(promise, ms = 8000) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+  }
+
+  async function inicializar() {
+    mostrarLoading(true);
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        await carregarPerfil();
+        await carregarDados();
+        mostrarApp();
+      } else {
+        mostrarAuth();
+      }
+    } catch(e) {
+      console.error('Erro inicializar:', e);
+      mostrarAuth();
+    } finally {
+      // Garante que o loading sempre desaparece
+      mostrarLoading(false);
+    }
+  }
+
+  async function fazerLogin() {
+    const email = document.getElementById('auth-email').value.trim();
+    const senha = document.getElementById('auth-senha').value;
+    const erro  = document.getElementById('login-erro');
+
+    if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; return; }
+
+    mostrarLoading(true);
+    erro.textContent = '';
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        erro.textContent = 'E-mail ou senha incorretos.';
+        return;
+      }
+      currentUser = data.user;
+      await carregarPerfil();
+      await carregarDados();
+      mostrarApp();
+    } catch(e) {
+      erro.textContent = 'Erro de conexão. Verifique sua internet.';
+    } finally {
+      mostrarLoading(false);
+    }
+  }
+
+  async function fazerCadastro() {
+    const email = document.getElementById('cad-email').value.trim();
+    const senha = document.getElementById('cad-senha').value;
+    const conf  = document.getElementById('cad-conf').value;
+    const erro  = document.getElementById('cad-erro');
+
+    if (!email || !senha)  { erro.textContent = 'Preencha todos os campos.'; return; }
+    if (senha !== conf)    { erro.textContent = 'As senhas não coincidem.'; return; }
+    if (senha.length < 6)  { erro.textContent = 'Senha mínima: 6 caracteres.'; return; }
+
+    mostrarLoading(true);
+    erro.textContent = '';
+    const { data, error } = await sb.auth.signUp({ email, password: senha });
+
+    if (error) {
+      erro.textContent = error.message;
+      mostrarLoading(false);
+      return;
+    }
+    currentUser = data.user;
+    perfil = {};
+    dados  = [];
+    isAdmin = false;
+    mostrarApp();
+    mostrarLoading(false);
+    mostrarToast('Conta criada! Preencha seus dados.');
+  }
+
+  async function fazerLogout() {
+    mostrarLoading(true);
+    await sb.auth.signOut();
+    if (chatSubGlobal) { sb.removeChannel(chatSubGlobal); chatSubGlobal = null; }
+    if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
+    currentUser = null;
+    perfil = {}; dados = []; dadosAdmin = []; isAdmin = false;
+    editandoId = null;
+    // Remove aba admin se existir
+    const tabAdmin = document.getElementById('tab-admin');
+    if (tabAdmin) tabAdmin.remove();
+    mostrarAuth();
+    mostrarLoading(false);
+  }
+
+  // ── RECUPERAÇÃO DE SENHA ─────────────────────────────
+
+  function mostrarResetSenha() {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.getElementById('form-reset').classList.add('active');
+    document.getElementById('reset-erro').textContent = '';
+    document.getElementById('reset-ok').textContent   = '';
+    document.getElementById('reset-email').value      = document.getElementById('auth-email').value;
+  }
+
+  function voltarLogin() {
+    trocarAuthTab('login', document.querySelector('.auth-tab'));
+  }
+
+  async function enviarResetSenha() {
+    const email = document.getElementById('reset-email').value.trim();
+    const erro  = document.getElementById('reset-erro');
+    const ok    = document.getElementById('reset-ok');
+
+    if (!email) { erro.textContent = 'Informe seu e-mail.'; return; }
+
+    erro.textContent = '';
+    ok.textContent   = '';
+    mostrarLoading(true);
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href
+    });
+
+    mostrarLoading(false);
+
+    if (error) {
+      erro.textContent = 'Não foi possível enviar o e-mail. Verifique o endereço.';
+    } else {
+      ok.textContent = 'E-mail enviado! Verifique sua caixa de entrada.';
+      document.getElementById('reset-email').value = '';
+    }
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (document.getElementById('form-login').classList.contains('active'))    fazerLogin();
+    if (document.getElementById('form-cadastro').classList.contains('active')) fazerCadastro();
+  });
+
+  // ═══════════════════════════════════════════════════
+  // PERFIL
+  // ═══════════════════════════════════════════════════
+  async function carregarPerfil() {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    perfil  = data || {};
+    isAdmin = perfil.is_admin === true;
+  }
+
+  function togglePainelDados() {
+    const p = document.getElementById('painel-dados');
+    p.style.display === 'block' ? fecharPainelDados() : abrirPainelDados();
+  }
+
+  function abrirPainelDados() {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('d-nome',  perfil.nome);
+    set('d-setor', perfil.setor);
+    set('d-andar', perfil.andar);
+    set('d-lider', perfil.lider);
+    set('d-email', perfil.email);
+    set('d-ramal', perfil.ramal);
+    document.getElementById('painel-dados').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => document.getElementById('d-nome').focus(), 100);
+  }
+
+  function fecharPainelDados() {
+    document.getElementById('painel-dados').style.display = 'none';
+  }
+
+  async function salvarPerfil() {
+    const nome  = document.getElementById('d-nome').value.trim();
+    const setor = document.getElementById('d-setor').value.trim();
+    const andar = document.getElementById('d-andar').value.trim();
+    const lider = document.getElementById('d-lider').value.trim();
+    const email = document.getElementById('d-email').value.trim();
+    const ramal = document.getElementById('d-ramal').value.trim();
+
+    if (!nome) { mostrarToast('O nome é obrigatório.', 'erro'); return; }
+
+    mostrarLoading(true);
+
+    // Tenta UPDATE primeiro; se não existir ainda, faz INSERT
+    // Não inclui is_admin — esse campo só pode ser alterado pelo admin no Supabase
+    const { error } = await sb.from('profiles').upsert(
+      { id: currentUser.id, nome, setor, andar, lider, email, ramal },
+      { onConflict: 'id' }
+    );
+
+    if (error) {
+      // Tenta INSERT separado caso o upsert falhe por política de RLS
+      const { error: errIns } = await sb.from('profiles').insert(
+        { id: currentUser.id, nome, setor, andar, lider, email, ramal }
+      );
+      if (errIns) {
+        mostrarToast('Erro ao salvar: ' + (errIns.message || 'verifique as políticas do Supabase.'), 'erro');
+        mostrarLoading(false);
+        return;
+      }
+    }
+
+    // Captura nome anterior ANTES de atualizar o perfil
+    const nomeAnterior = perfil.nome || '';
+
+    perfil = { ...perfil, nome, setor, andar, lider, email, ramal };
+
+    // Se o nome mudou, atualiza todos os registros existentes do usuário
+    if (nomeAnterior && nomeAnterior !== nome) {
+      await sb.from('registros')
+        .update({ colaborador: nome })
+        .eq('user_id', currentUser.id);
+      // Atualiza também no array local para não precisar recarregar
+      dados = dados.map(r => ({ ...r, colaborador: nome }));
+    }
+
+    aplicarPerfil();
+    fecharPainelDados();
+    renderFollowUp();
+    mostrarToast('Dados salvos com sucesso!');
+    mostrarLoading(false);
+  }
+
+  function aplicarPerfil() {
+    const tem = !!perfil.nome;
+    const av  = document.getElementById('header-avatar');
+
+    if (tem) {
+      const ini = perfil.nome.split(' ').filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+      av.textContent = ini; av.classList.remove('vazio');
+    } else {
+      av.textContent = '?'; av.classList.add('vazio');
+    }
+
+    document.getElementById('header-nome').textContent  = perfil.nome  || 'Identificar-se';
+    document.getElementById('header-setor').textContent = perfil.setor || (tem ? '—' : 'clique para preencher');
+
+    const inp = document.getElementById('inp-colab');
+    if (inp) { inp.value = perfil.nome || ''; }
+
+    const banner = document.getElementById('banner-perfil');
+    if (banner) banner.classList.toggle('oculto', tem);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // DADOS (CRUD com Supabase)
+  // ═══════════════════════════════════════════════════
+  async function carregarDados() {
+    const { data } = await sb.from('registros')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('data', { ascending: false });
+    dados = data || [];
+  }
+
+  async function carregarDadosAdmin() {
+    mostrarLoading(true);
+    const { data } = await sb.from('registros')
+      .select('*')
+      .order('data', { ascending: false });
+    dadosAdmin = data || [];
+
+    // Preenche os autocomplete de colaborador e obra do painel admin
+    const colabs = [...new Set(dadosAdmin.map(r => r.colaborador))].sort();
+    const obras  = [...new Set(dadosAdmin.map(r => r.obra))].sort();
+    const lc = document.getElementById('adm-list-colab');
+    const lo = document.getElementById('adm-list-obra');
+    if (lc) lc.innerHTML = colabs.map(c => `<option value="${escapeHTML(c)}">`).join('');
+    if (lo) lo.innerHTML = obras.map(o => `<option value="${escapeHTML(o)}">`).join('');
+
+    mostrarLoading(false);
+  }
+
+  function salvarOuAdicionar() {
+    editandoId !== null ? salvarEdicao() : adicionarRegistro();
+  }
+
+  async function adicionarRegistro() {
+    const colaborador = document.getElementById('inp-colab').value.trim();
+    const obra        = document.getElementById('inp-obra').value.trim();
+    const data        = document.getElementById('inp-data').value;
+    const horaStr     = document.getElementById('inp-horas').value.trim();
+    const obs         = document.getElementById('inp-obs').value.trim();
+    const disciplina  = document.getElementById('inp-disciplina').value;
+
+    if (!colaborador || !obra || !data || !horaStr) {
+      mostrarToast('Preencha todos os campos obrigatórios.', 'erro'); return;
+    }
+    if (!horaValida(horaStr)) {
+      mostrarToast('Hora inválida. Ex: 8:30', 'erro'); return;
+    }
+
+    const horas = horaParaDecimal(horaStr);
+    mostrarLoading(true);
+
+    const payload = {
+      user_id: currentUser.id,
+      colaborador, obra, data,
+      horas, obs: obs || null,
+      setor: perfil.setor || null,
+      disciplina: disciplina || null
+    };
+    if (horaStr) payload.hora_str = horaStr;
+
+    const { data: novo, error } = await sb.from('registros').insert(payload).select().single();
+
+    if (error) {
+      mostrarToast('Erro: ' + (error.message || error.code || 'verifique o console'), 'erro');
+      console.error('Erro ao inserir registro:', error);
+      mostrarLoading(false);
+      return;
+    }
+
+    dados.unshift(novo);
+    document.getElementById('inp-obra').value       = '';
+    document.getElementById('inp-horas').value      = '';
+    document.getElementById('inp-obs').value        = '';
+    document.getElementById('inp-disciplina').value = '';
+    document.getElementById('inp-horas').style.borderColor = '';
+
+    renderTudo();
+    mostrarToast('Registro adicionado!');
+    mostrarLoading(false);
+  }
+
+  function editarRegistro(id) {
+    const r = dados.find(x => x.id === id);
+    if (!r) return;
+    editandoId = id;
+    document.getElementById('inp-obra').value       = r.obra;
+    document.getElementById('inp-data').value       = r.data;
+    document.getElementById('inp-horas').value      = r.hora_str || decimalParaHora(r.horas);
+    document.getElementById('inp-obs').value        = r.obs || '';
+    document.getElementById('inp-disciplina').value = r.disciplina || '';
+
+    document.getElementById('form-card').classList.add('editando');
+    document.getElementById('form-titulo').textContent = '✎  Editando Registro';
+    document.getElementById('btn-add-salvar').textContent = '✔ Salvar Alteração';
+    document.getElementById('btn-add-salvar').classList.add('editando');
+    document.getElementById('btn-cancelar-edicao').style.display = 'block';
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    renderTabela();
+  }
+
+  async function salvarEdicao() {
+    const obra    = document.getElementById('inp-obra').value.trim();
+    const data    = document.getElementById('inp-data').value;
+    const horaStr = document.getElementById('inp-horas').value.trim();
+    const obs        = document.getElementById('inp-obs').value.trim();
+    const disciplina = document.getElementById('inp-disciplina').value;
+
+    if (!obra || !data || !horaStr) { mostrarToast('Preencha todos os campos.', 'erro'); return; }
+    if (!horaValida(horaStr))       { mostrarToast('Hora inválida.', 'erro'); return; }
+
+    const horas = horaParaDecimal(horaStr);
+    mostrarLoading(true);
+
+    const { error } = await sb.from('registros')
+      .update({ obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null })
+      .eq('id', editandoId);
+
+    if (error) { mostrarToast('Erro ao atualizar.', 'erro'); mostrarLoading(false); return; }
+
+    const idx = dados.findIndex(r => r.id === editandoId);
+    if (idx !== -1) dados[idx] = { ...dados[idx], obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null };
+
+    cancelarEdicao();
+    renderTudo();
+    mostrarToast('Registro atualizado!');
+    mostrarLoading(false);
+  }
+
+  // Pré-preenche o formulário com os dados do registro mas com a data de hoje
+  function repetirRegistro(id) {
+    const r = dados.find(x => x.id === id);
+    if (!r) return;
+
+    // Garante que não está em modo edição
+    cancelarEdicao();
+
+    document.getElementById('inp-obra').value       = r.obra;
+    document.getElementById('inp-data').value       = toLocalISO(new Date());
+    document.getElementById('inp-horas').value      = r.hora_str || decimalParaHora(r.horas);
+    document.getElementById('inp-obs').value        = r.obs || '';
+    document.getElementById('inp-disciplina').value = r.disciplina || '';
+
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('inp-horas').focus(), 400);
+    mostrarToast('Registro pré-preenchido com hoje. Confirme e clique em + Adicionar.');
+  }
+
+  function cancelarEdicao() {
+    editandoId = null;
+    document.getElementById('form-card').classList.remove('editando');
+    document.getElementById('form-titulo').textContent = 'Novo Registro';
+    document.getElementById('btn-add-salvar').textContent = '+ Adicionar';
+    document.getElementById('btn-add-salvar').classList.remove('editando');
+    document.getElementById('btn-cancelar-edicao').style.display = 'none';
+    document.getElementById('inp-obra').value       = '';
+    document.getElementById('inp-horas').value      = '';
+    document.getElementById('inp-obs').value        = '';
+    document.getElementById('inp-disciplina').value = '';
+    renderTabela();
+  }
+
+  async function deletarRegistro(id) {
+    if (!confirm('Excluir este registro?')) return;
+    if (editandoId === id) cancelarEdicao();
+    mostrarLoading(true);
+
+    const { error } = await sb.from('registros').delete().eq('id', id);
+    if (error) { mostrarToast('Erro ao excluir.', 'erro'); mostrarLoading(false); return; }
+
+    dados = dados.filter(r => r.id !== id);
+    renderTudo();
+    mostrarToast('Registro excluído.', 'info');
+    mostrarLoading(false);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // RENDERIZAÇÃO
+  // ═══════════════════════════════════════════════════
+  function renderTudo() {
+    renderDataLists();
+    renderTabela();
+    renderPorColaborador();
+    renderPorObra();
+    renderFollowUp();
+    atualizarIconesSort();
+  }
+
+  function renderDataLists() {
+    const colabs = [...new Set(dados.map(r => r.colaborador))].sort();
+    const obras  = [...new Set(dados.map(r => r.obra))].sort();
+    document.getElementById('list-colab').innerHTML = colabs.map(c => `<option value="${escapeHTML(c)}">`).join('');
+    document.getElementById('list-obra').innerHTML  = obras.map(o => `<option value="${escapeHTML(o)}">`).join('');
+  }
+
+  function obterDadosFiltrados() {
+    const de    = document.getElementById('filtro-de').value;
+    const ate   = document.getElementById('filtro-ate').value;
+    const colab = document.getElementById('filtro-colab').value.trim().toLowerCase();
+    const obra  = document.getElementById('filtro-obra').value.trim().toLowerCase();
+    return dados.filter(r => {
+      if (de  && r.data < de)  return false;
+      if (ate && r.data > ate) return false;
+      if (colab && !r.colaborador.toLowerCase().includes(colab)) return false;
+      if (obra  && !r.obra.toLowerCase().includes(obra))         return false;
+      return true;
+    });
+  }
+
+  function renderTabela() {
+    const tbody = document.getElementById('tabela-body');
+    let lista   = obterDadosFiltrados();
+
+    lista.sort((a, b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (sortCol === 'horas') { va = parseFloat(va); vb = parseFloat(vb); }
+      if (va < vb) return sortAsc ? -1 :  1;
+      if (va > vb) return sortAsc ?  1 : -1;
+      return 0;
+    });
+
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><strong>Nenhum registro encontrado</strong>Use o formulário acima para adicionar ou ajuste os filtros.</div></td></tr>`;
+    } else {
+      tbody.innerHTML = lista.map(r => `
+        <tr id="linha-${r.id}" ${editandoId === r.id ? 'class="editando-linha"' : ''}>
+          <td>${formatarData(r.data)}</td>
+          <td>${escapeHTML(r.colaborador)}</td>
+          <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
+          <td>${escapeHTML(r.obra)}</td>
+          <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+          <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
+          <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button class="btn-rep"  onclick="repetirRegistro('${r.id}')">↻ Repetir</button>
+            <button class="btn-edit" onclick="editarRegistro('${r.id}')">✎ Editar</button>
+            <button class="btn-del"  onclick="deletarRegistro('${r.id}')">✕ Excluir</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    const totalDec = lista.reduce((s, r) => s + r.horas, 0);
+    document.getElementById('footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
+    document.getElementById('footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
+  }
+
+  function renderPorColaborador() {
+    const grid  = document.getElementById('grid-colab');
+    const fonte = isAdmin ? dadosAdmin : dados;
+    const mapa  = {};
+
+    fonte.forEach(r => {
+      if (!mapa[r.colaborador]) mapa[r.colaborador] = { horas: 0, obras: new Set(), dias: new Set() };
+      mapa[r.colaborador].horas += r.horas;
+      mapa[r.colaborador].obras.add(r.obra);
+      mapa[r.colaborador].dias.add(r.data);
+    });
+    const lista    = Object.entries(mapa).sort((a, b) => b[1].horas - a[1].horas);
+    const maxHoras = lista.length > 0 ? lista[0][1].horas : 1;
+    const totalG   = lista.reduce((s, [, v]) => s + v.horas, 0);
+
+    grid.innerHTML = lista.length === 0
+      ? `<div class="empty"><strong>Sem dados</strong>Adicione registros para ver o resumo.</div>`
+      : lista.map(([nome, val]) => `
+          <div class="resumo-card clicavel" onclick="mostrarDetalheColab('${escapeHTML(nome).replace(/'/g,"\\'")}')">
+            <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
+            <div class="total-h">${decimalParaHora(val.horas)}</div>
+            <div class="sub-info">${val.obras.size} obra(s) · ${val.dias.size} dia(s) trabalhado(s)</div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>
+          </div>`).join('');
+
+    document.getElementById('footer-colab-total').textContent =
+      lista.length > 0 ? `${lista.length} colaborador(es) · Total: ${decimalParaHora(totalG)}` : '';
+
+    fecharDetalheColab();
+  }
+
+  // Mostra registros individuais de um colaborador
+  function mostrarDetalheColab(nomeColab) {
+    const fonte = isAdmin ? dadosAdmin : dados;
+
+    // Destaca card selecionado
+    document.querySelectorAll('#grid-colab .resumo-card').forEach(c => {
+      c.classList.toggle('selecionado', c.querySelector('.nome').title === nomeColab);
+    });
+
+    // Registros do colaborador ordenados por data
+    const lista  = fonte
+      .filter(r => r.colaborador === nomeColab)
+      .sort((a, b) => a.data < b.data ? 1 : -1);
+
+    const totalG = lista.reduce((s, r) => s + r.horas, 0);
+
+    const tbody = document.getElementById('detalhe-colab-body');
+    tbody.innerHTML = lista.map(r => `
+      <tr>
+        <td>${formatarData(r.data)}</td>
+        <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
+        <td>${escapeHTML(r.obra)}</td>
+        <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+        <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
+        <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
+      </tr>`).join('');
+
+    document.getElementById('detalhe-colab-nome').textContent  = nomeColab;
+    document.getElementById('detalhe-colab-qtd').textContent   = lista.length;
+    document.getElementById('detalhe-colab-total').textContent = decimalParaHora(totalG);
+
+    document.getElementById('detalhe-colab').classList.remove('oculto');
+    document.getElementById('detalhe-colab').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function fecharDetalheColab() {
+    document.getElementById('detalhe-colab').classList.add('oculto');
+    document.querySelectorAll('#grid-colab .resumo-card').forEach(c => c.classList.remove('selecionado'));
+  }
+
+  function renderPorObra() {
+    const grid  = document.getElementById('grid-obra');
+    // Admin usa todos os dados; colaborador usa só os seus
+    const fonte = isAdmin ? dadosAdmin : dados;
+    const mapa  = {};
+
+    fonte.forEach(r => {
+      if (!mapa[r.obra]) mapa[r.obra] = { horas: 0, pessoas: new Set(), dias: new Set() };
+      mapa[r.obra].horas += r.horas;
+      mapa[r.obra].pessoas.add(r.colaborador);
+      mapa[r.obra].dias.add(r.data);
+    });
+    const lista    = Object.entries(mapa).sort((a, b) => b[1].horas - a[1].horas);
+    const maxHoras = lista.length > 0 ? lista[0][1].horas : 1;
+    const totalG   = lista.reduce((s, [, v]) => s + v.horas, 0);
+
+    grid.innerHTML = lista.length === 0
+      ? `<div class="empty"><strong>Sem dados</strong>Adicione registros para ver o resumo.</div>`
+      : lista.map(([nome, val]) => `
+          <div class="resumo-card clicavel" onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}')">
+            <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
+            <div class="total-h">${decimalParaHora(val.horas)}</div>
+            <div class="sub-info">${val.pessoas.size} colaborador(es) · ${val.dias.size} dia(s) de trabalho</div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>
+          </div>`).join('');
+
+    document.getElementById('footer-obra-total').textContent =
+      lista.length > 0 ? `${lista.length} obra(s) · Total: ${decimalParaHora(totalG)}` : '';
+
+    // Fecha detalhe ao re-renderizar
+    fecharDetalheObra();
+  }
+
+  function mostrarDetalheObra(nomeObra) {
+    const fonte = isAdmin ? dadosAdmin : dados;
+
+    // Destaca card selecionado
+    document.querySelectorAll('#grid-obra .resumo-card').forEach(c => {
+      c.classList.toggle('selecionado', c.querySelector('.nome').title === nomeObra);
+    });
+
+    // Lista registros individuais dessa obra, ordenados por data
+    const lista = fonte
+      .filter(r => r.obra === nomeObra)
+      .sort((a, b) => a.data < b.data ? 1 : -1);
+
+    const totalG = lista.reduce((s, r) => s + r.horas, 0);
+    const colabs = new Set(lista.map(r => r.colaborador)).size;
+
+    const tbody = document.getElementById('detalhe-obra-body');
+    tbody.innerHTML = lista.map(r => `
+      <tr>
+        <td>${formatarData(r.data)}</td>
+        <td>${escapeHTML(r.colaborador)}</td>
+        <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
+        <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+        <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
+        <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
+      </tr>`).join('');
+
+    document.getElementById('detalhe-obra-nome').textContent   = nomeObra;
+    document.getElementById('detalhe-qtd-colab').textContent   = colabs;
+    document.getElementById('detalhe-total-horas').textContent = decimalParaHora(totalG);
+
+    document.getElementById('detalhe-obra').classList.remove('oculto');
+    document.getElementById('detalhe-obra').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function fecharDetalheObra() {
+    document.getElementById('detalhe-obra').classList.add('oculto');
+    document.querySelectorAll('#grid-obra .resumo-card').forEach(c => c.classList.remove('selecionado'));
+  }
+
+  // ═══════════════════════════════════════════════════
+  // PAINEL ADMIN
+  // ═══════════════════════════════════════════════════
+  async function trocarAba(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+
+    if (id === 'admin' || (isAdmin && id === 'por-obra') || (isAdmin && id === 'por-colaborador')) {
+      if (dadosAdmin.length === 0) await carregarDadosAdmin();
+    }
+    if (id === 'admin')            renderAdmin();
+    if (id === 'por-obra')         renderPorObra();
+    if (id === 'por-colaborador')  renderPorColaborador();
+  }
+
+  function renderAdmin() {
+    const de    = document.getElementById('adm-de').value;
+    const ate   = document.getElementById('adm-ate').value;
+    const colab = document.getElementById('adm-colab').value.trim().toLowerCase();
+    const obra  = document.getElementById('adm-obra').value.trim().toLowerCase();
+
+    let lista = dadosAdmin.filter(r => {
+      if (de    && r.data < de)  return false;
+      if (ate   && r.data > ate) return false;
+      if (colab && !r.colaborador.toLowerCase().includes(colab)) return false;
+      if (obra  && !r.obra.toLowerCase().includes(obra))         return false;
+      return true;
+    }).sort((a, b) => a.data < b.data ? 1 : -1);
+
+    const tbody = document.getElementById('admin-body');
+    tbody.innerHTML = lista.length === 0
+      ? `<tr><td colspan="6"><div class="empty"><strong>Sem registros</strong>Ajuste os filtros acima.</div></td></tr>`
+      : lista.map(r => `
+          <tr>
+            <td>${formatarData(r.data)}</td>
+            <td>${escapeHTML(r.colaborador)}</td>
+            <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
+            <td>${escapeHTML(r.obra)}</td>
+            <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+            <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
+            <td style="color:var(--muted)">${r.obs ? escapeHTML(r.obs) : '—'}</td>
+          </tr>`).join('');
+
+    const totalDec = lista.reduce((s, r) => s + r.horas, 0);
+    document.getElementById('adm-footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
+    document.getElementById('adm-footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
+  }
+
+  function limparFiltrosAdmin() {
+    ['adm-de','adm-ate','adm-colab','adm-obra'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
+    renderAdmin();
+  }
+
+  function filtrarPeriodoAdmin(tipo, btn) {
+    const hoje = toLocalISO(new Date());
+    const de   = tipo === 'hoje'      ? hoje
+               : tipo === 'semana'    ? inicioSemana()
+               : tipo === 'mes'       ? hoje.slice(0,7) + '-01'
+               : tipo === 'trimestre' ? diasAtras(90)
+               :                       diasAtras(180);
+
+    document.getElementById('adm-de').value  = de;
+    document.getElementById('adm-ate').value = hoje;
+    document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderAdmin();
+  }
+
+  function desativarPeriodosAdmin() {
+    document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
+  }
+
+  // ─── BUSCA NOS CARDS ────────────────────────────────
+
+  function filtrarCardsColab() {
+    const termo = document.getElementById('busca-colab').value.trim().toLowerCase();
+    document.querySelectorAll('#grid-colab .resumo-card').forEach(card => {
+      const nome = card.querySelector('.nome').textContent.toLowerCase();
+      card.classList.toggle('oculto-busca', termo !== '' && !nome.includes(termo));
+    });
+  }
+
+  function limparBuscaColab() {
+    document.getElementById('busca-colab').value = '';
+    document.querySelectorAll('#grid-colab .resumo-card').forEach(c => c.classList.remove('oculto-busca'));
+    fecharDetalheColab();
+  }
+
+  function filtrarCardsObra() {
+    const termo = document.getElementById('busca-obra').value.trim().toLowerCase();
+    document.querySelectorAll('#grid-obra .resumo-card').forEach(card => {
+      const nome = card.querySelector('.nome').textContent.toLowerCase();
+      card.classList.toggle('oculto-busca', termo !== '' && !nome.includes(termo));
+    });
+  }
+
+  function limparBuscaObra() {
+    document.getElementById('busca-obra').value = '';
+    document.querySelectorAll('#grid-obra .resumo-card').forEach(c => c.classList.remove('oculto-busca'));
+    fecharDetalheObra();
+  }
+
+  // FOLLOW-UP
+  // ═══════════════════════════════════════════════════
+  function renderFollowUp() {
+    const card = document.getElementById('followup-card');
+    if (!perfil.nome || isAdmin) { card.classList.add('oculto'); return; }
+
+    const lista  = document.getElementById('followup-lista');
+    const hoje   = new Date();
+    hoje.setHours(0,0,0,0);
+
+    // Data de criação da conta — follow-up só começa a partir do dia seguinte
+    const criacao = new Date(currentUser.created_at);
+    criacao.setHours(0,0,0,0);
+    const inicioPrimeiroDia = new Date(criacao);
+    inicioPrimeiroDia.setDate(criacao.getDate() + 1);
+
+    const nomeDia = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const falta   = [];
+
+    for (let i = 1; i <= 14; i++) {
+      const d = new Date(hoje);
+      d.setDate(hoje.getDate() - i);
+
+      // Ignora dias anteriores ao primeiro dia após o cadastro
+      if (d < inicioPrimeiroDia) continue;
+
+      const dow = d.getDay();
+      if (dow === 0 || dow === 6) continue;
+
+      const iso = toLocalISO(d);
+      if (!dados.some(r => r.colaborador === perfil.nome && r.data === iso)) {
+        falta.push({ iso, label: formatarData(iso), dia: nomeDia[dow] });
+      }
+    }
+
+    if (falta.length === 0) { card.classList.add('oculto'); return; }
+
+    lista.innerHTML = falta.map(d => `
+      <div class="followup-item">
+        <div>
+          <div class="followup-data">${d.label}</div>
+          <div class="followup-dia">${d.dia}</div>
+        </div>
+        <button class="btn-followup" onclick="preencherDia('${d.iso}')">+ Registrar</button>
+      </div>`).join('');
+
+    card.classList.remove('oculto');
+  }
+
+  function preencherDia(iso) {
+    document.getElementById('inp-data').value = iso;
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('inp-obra').focus(), 400);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // FILTROS DE PERÍODO
+  // ═══════════════════════════════════════════════════
+  function toLocalISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd= String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
+
+  function inicioSemana() {
+    // Volta até o domingo anterior (se hoje é domingo, vai 7 dias atrás)
+    const hoje = new Date();
+    const dow  = hoje.getDay(); // 0=Dom 1=Seg ... 6=Sab
+    const diff = dow === 0 ? -7 : -dow;
+    const dom  = new Date(hoje);
+    dom.setDate(hoje.getDate() + diff);
+    return toLocalISO(dom);
+  }
+
+  function diasAtras(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return toLocalISO(d);
+  }
+
+  function filtrarPeriodo(tipo, btn) {
+    const hoje = toLocalISO(new Date());
+    const de   = tipo === 'hoje'      ? hoje
+               : tipo === 'semana'    ? inicioSemana()
+               : tipo === 'mes'       ? hoje.slice(0,7) + '-01'
+               : tipo === 'trimestre' ? diasAtras(90)
+               :                       diasAtras(180);
+
+    const ate  = hoje;
+
+    document.getElementById('filtro-de').value  = de;
+    document.getElementById('filtro-ate').value = ate;
+    document.querySelectorAll('.btn-periodo').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderTabela();
+  }
+
+  function desativarPeriodosRapidos() {
+    document.querySelectorAll('.btn-periodo').forEach(b => b.classList.remove('ativo'));
+  }
+
+  function limparFiltros() {
+    ['filtro-de','filtro-ate','filtro-colab','filtro-obra'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('.btn-periodo').forEach(b => b.classList.remove('ativo'));
+    renderTabela();
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ORDENAÇÃO
+  // ═══════════════════════════════════════════════════
+  function ordenarPor(col) {
+    if (sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
+    renderTabela();
+    atualizarIconesSort();
+  }
+
+  function atualizarIconesSort() {
+    ['data','colaborador','obra','horas'].forEach(c => {
+      const el = document.getElementById('sort-' + c);
+      if (el) el.textContent = c === sortCol ? (sortAsc ? '▲' : '▼') : '';
+    });
+  }
+
+  // ═══════════════════════════════════════════════════
+  // EXPORTAR CSV
+  // ═══════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════
+  // EXPORTAÇÃO EXCEL (múltiplas abas por disciplina)
+  // ═══════════════════════════════════════════════════
+
+  const CAB_EXCEL = ['Data','Colaborador','Setor','Obra / Projeto','Disciplina','Horas','Observação'];
+
+  // Converte lista de registros para linhas + linha de total no final
+  function registrosParaLinhas(lista) {
+    const linhas = lista
+      .sort((a,b) => a.data.localeCompare(b.data))
+      .map(r => [
+        formatarData(r.data),
+        r.colaborador,
+        r.setor      || '',
+        r.obra,
+        r.disciplina || '',
+        r.horas / 24,   // Horas como fração de dia — Excel entende como tempo
+        r.obs        || ''
+      ]);
+
+    // Linha de total
+    const totalDec = lista.reduce((s, r) => s + r.horas, 0);
+    linhas.push(['', '', '', '', 'TOTAL', totalDec / 24, '']);
+
+    return linhas;
+  }
+
+  // Aplica formato de hora [h]:mm em todas as células da coluna Horas (índice 5)
+  function aplicarFormatoHoras(ws, numLinhas) {
+    // numLinhas inclui cabeçalho (linha 1) + dados + total
+    for (let row = 1; row < numLinhas; row++) {  // row 0 = cabeçalho, pula
+      const cellAddr = XLSX.utils.encode_cell({ r: row, c: 5 });
+      if (ws[cellAddr]) {
+        ws[cellAddr].t = 'n';
+        ws[cellAddr].z = '[h]:mm';  // formato que suporta >24h e permite AutoSoma
+      }
+    }
+  }
+
+  // Gera arquivo Excel com aba "Tudo" + uma aba por disciplina
+  function gerarExcel(lista, nomeArquivo) {
+    if (!lista.length) { mostrarToast('Sem dados para exportar.', 'info'); return; }
+
+    const wb = XLSX.utils.book_new();
+
+    // ── Aba 1: Tudo ──────────────────────────────────
+    const linhasAll = registrosParaLinhas(lista);
+    const wsAll     = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhasAll]);
+    aplicarFormatoHoras(wsAll, linhasAll.length + 1);
+    estilizarPlanilha(wsAll);
+    XLSX.utils.book_append_sheet(wb, wsAll, 'Tudo');
+
+    // ── Abas por Disciplina ───────────────────────────
+    const disciplinas = [...new Set(lista.map(r => r.disciplina || 'Sem disciplina'))].sort();
+
+    disciplinas.forEach(disc => {
+      const sub       = lista.filter(r => (r.disciplina || 'Sem disciplina') === disc);
+      const linhasSub = registrosParaLinhas(sub);
+      const ws        = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhasSub]);
+      aplicarFormatoHoras(ws, linhasSub.length + 1);
+      estilizarPlanilha(ws);
+      XLSX.utils.book_append_sheet(wb, ws, disc.substring(0, 31));
+    });
+
+    XLSX.writeFile(wb, `${nomeArquivo}_${toLocalISO(new Date())}.xlsx`);
+    mostrarToast('Excel exportado!');
+  }
+
+  // Ajusta larguras e destaca linha de total
+  function estilizarPlanilha(ws) {
+    ws['!cols'] = [
+      { wch: 12 }, // Data
+      { wch: 25 }, // Colaborador
+      { wch: 18 }, // Setor
+      { wch: 25 }, // Obra
+      { wch: 22 }, // Disciplina
+      { wch: 10 }, // Horas
+      { wch: 30 }, // Observação
+    ];
+  }
+
+  function exportarCSV() {
+    const lista = obterDadosFiltrados();
+    gerarExcel(lista, 'registros_filtrados');
+  }
+
+  function exportarCSVCompleto() {
+    if (!dados.length) { mostrarToast('Sem dados para exportar.', 'info'); return; }
+    gerarExcel(dados, 'registros_completos');
+  }
+
+  function exportarCSVAdmin() {
+    if (!dadosAdmin.length) { mostrarToast('Sem dados para exportar.', 'info'); return; }
+    gerarExcel(dadosAdmin, 'admin_todos_registros');
+  }
+
+  function exportarDetalheColab() {
+    const nome  = document.getElementById('detalhe-colab-nome').textContent;
+    const fonte = isAdmin ? dadosAdmin : dados;
+    const lista = fonte.filter(r => r.colaborador === nome);
+    gerarExcel(lista, 'colaborador_' + nome.replace(/\s+/g,'_'));
+  }
+
+  function exportarDetalheObra() {
+    const titulo = document.getElementById('detalhe-obra-nome').textContent;
+    const fonte  = isAdmin ? dadosAdmin : dados;
+    const lista  = fonte.filter(r => r.obra === titulo);
+    gerarExcel(lista, 'obra_' + titulo.replace(/\s+/g,'_'));
+  }
+
+  // Mantém gerarCSV como fallback (não usado mais)
+  function gerarCSV(linhas, nome) {
+    gerarExcel([], nome);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // HORA: MÁSCARA, VALIDAÇÃO E CONVERSÃO
+  // ═══════════════════════════════════════════════════
+  function formatarMascaraHora(digits) {
+    if (!digits) return '';
+    if (digits.length === 1) return digits;
+    if (digits.length === 2) return digits === '10' ? digits : digits[0] + ':' + digits[1];
+    if (digits.length === 3) return digits[0] + ':' + digits.slice(1,3);
+    if (digits.length === 4) return digits.startsWith('10') ? '10:' + digits.slice(2,4) : digits[0] + ':' + digits.slice(1,3);
+    return digits;
+  }
+
+  function onHoraInput(e) {
+    const inp  = e.target;
+    const erro = document.getElementById('inp-horas-erro');
+    inp.value  = formatarMascaraHora(inp.value.replace(/\D/g,'').slice(0,4));
+    validarExibicaoHora(inp, erro);
+  }
+
+  function onHoraBlur(e) {
+    const inp = e.target;
+    const val = inp.value.trim();
+    if (val && !val.includes(':')) {
+      const h = parseInt(val);
+      if (!isNaN(h) && h >= 1 && h <= 10) inp.value = h + ':00';
+    }
+    validarExibicaoHora(inp, document.getElementById('inp-horas-erro'));
+  }
+
+  function validarExibicaoHora(inp, erro) {
+    const val = inp.value;
+    erro.style.display = 'none'; inp.style.borderColor = '';
+    if (!val || !val.includes(':')) return;
+    const [hStr, mStr] = val.split(':');
+    const h = parseInt(hStr), m = parseInt(mStr);
+    if (mStr.length < 2) return;
+    if (isNaN(h)||isNaN(m)||m<0||m>59) {
+      inp.style.borderColor = 'var(--danger)'; erro.textContent = 'Minutos inválidos (00–59)'; erro.style.display = 'block';
+    } else if (h > 10 || (h === 10 && m > 0)) {
+      inp.style.borderColor = 'var(--danger)'; erro.textContent = 'Máximo: 10:00'; erro.style.display = 'block';
+    } else if (h === 0 && m === 0) {
+      inp.style.borderColor = 'var(--danger)'; erro.textContent = 'Hora não pode ser 0:00'; erro.style.display = 'block';
+    } else {
+      inp.style.borderColor = 'var(--success)';
+    }
+  }
+
+  function horaValida(str) {
+    if (!str || !str.includes(':')) return false;
+    const [hStr, mStr] = str.split(':');
+    const h = parseInt(hStr), m = parseInt(mStr);
+    if (isNaN(h)||isNaN(m)||m<0||m>59)       return false;
+    if (h<0||(h===0&&m===0))                  return false;
+    if (h>10||(h===10&&m>0))                  return false;
+    return true;
+  }
+
+  function horaParaDecimal(str) {
+    if (!str || !str.includes(':')) return parseFloat(str) || 0;
+    const [h, m] = str.split(':').map(Number);
+    return h + m / 60;
+  }
+
+  function decimalParaHora(dec) {
+    if (dec == null || isNaN(dec)) return '0:00';
+    const h = Math.floor(dec);
+    const m = Math.round((dec - h) * 60);
+    return `${h}:${String(m).padStart(2,'0')}`;
+  }
+
+  // ═══════════════════════════════════════════════════
+  // UTILITÁRIOS
+  // ═══════════════════════════════════════════════════
+  function formatarData(iso) {
+    if (!iso) return '—';
+    const [a, m, d] = iso.split('-');
+    return `${d}/${m}/${a}`;
+  }
+
+  function escapeHTML(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function mostrarToast(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = tipo === 'erro' ? '#e05a5a' : tipo === 'info' ? '#4a9eff' : '#4caf88';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // INICIALIZAÇÃO
+  // ═══════════════════════════════════════════════════
+  document.getElementById('inp-data').value = toLocalISO(new Date());
+  document.getElementById('inp-horas').addEventListener('input', onHoraInput);
+  document.getElementById('inp-horas').addEventListener('blur',  onHoraBlur);
+  document.getElementById('inp-horas').addEventListener('keydown', e => { if (e.key==='Enter') salvarOuAdicionar(); });
+  document.getElementById('inp-obs').addEventListener('keydown',   e => { if (e.key==='Enter') salvarOuAdicionar(); });
+
+  // Inicia o app após o SDK do Supabase carregar
+  function aguardarSDK() {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+
+      // Verifica ANTES de tudo se é um link de recuperação de senha
+      const hash = window.location.hash;
+      if (hash.includes('type=recovery') || hash.includes('type%3Drecovery')) {
+        mostrarLoading(false);
+        mostrarAuth();
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.getElementById('form-nova-senha').classList.add('active');
+
+        // Supabase ainda processa o token — escuta para ter a sessão disponível ao salvar
+        sb.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY') {
+            // Garante que o formulário de nova senha está visível
+            mostrarAuth();
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById('form-nova-senha').classList.add('active');
+          }
+        });
+        return; // Não chama inicializar()
+      }
+
+      inicializar();
+    } else {
+      setTimeout(aguardarSDK, 100);
+    }
+  }
+  aguardarSDK();
+
+  async function salvarNovaSenha() {
+    const senha = document.getElementById('nova-senha').value;
+    const conf  = document.getElementById('nova-senha-conf').value;
+    const erro  = document.getElementById('nova-senha-erro');
+
+    if (!senha || senha.length < 6) { erro.textContent = 'Senha mínima: 6 caracteres.'; return; }
+    if (senha !== conf)              { erro.textContent = 'As senhas não coincidem.'; return; }
+
+    erro.textContent = '';
+    mostrarLoading(true);
+
+    const { error } = await sb.auth.updateUser({ password: senha });
+
+    mostrarLoading(false);
+
+    if (error) {
+      erro.textContent = 'Erro ao salvar senha. Tente novamente.';
+      return;
+    }
+
+    mostrarToast('Senha alterada com sucesso! Faça login.');
+    // Limpa a URL e vai para o login
+    window.history.replaceState({}, '', window.location.pathname);
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.querySelector('.auth-tab').classList.add('active');
+    document.getElementById('form-login').classList.add('active');
+  }
+
+  // ═══════════════════════════════════════════════════
+  // CHAT
+  // ═══════════════════════════════════════════════════
+  let chatCanal        = 'geral';   // canal ativo
+  let chatTipo         = 'geral';   // geral | obra | direto
+  let chatDestino      = '';        // nome da obra ou user_id destino
+  let chatRealtimeSub  = null;      // subscription do canal ativo
+  let chatSubGlobal    = null;      // subscription global para badge
+  let chatNaoLidas     = {};        // { canal: count }
+  let chatUltimoAcesso = {};        // { canal: timestamp }
+
+  // Subscrição global — atualiza badge mesmo com chat fechado
+  function iniciarSubGlobal() {
+    if (chatSubGlobal) sb.removeChannel(chatSubGlobal);
+    chatSubGlobal = sb.channel('chat-global-' + currentUser.id)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'mensagens'
+      }, payload => {
+        const r = payload.new;
+        if (r.user_id === currentUser.id) return; // ignora as próprias
+        const canal = r.tipo === 'direto' ? r.destino
+                    : r.tipo === 'obra'   ? 'obra:' + r.destino
+                    : 'geral';
+        // Só conta se o chat estiver fechado ou em outro canal
+        const chatAberto = document.getElementById('chat-painel').style.display === 'block';
+        if (!chatAberto || canal !== chatCanal) {
+          chatNaoLidas[canal] = (chatNaoLidas[canal] || 0) + 1;
+          atualizarBadgeGeral();
+        }
+      })
+      .subscribe();
+  }
+
+  // ── ABRIR / FECHAR ─────────────────────────────────
+  function toggleChat() {
+    const p = document.getElementById('chat-painel');
+    if (p.style.display === 'none' || !p.style.display) {
+      p.style.display = 'block';
+      abrirCanalChat('geral', document.querySelector('.chat-tab'));
+      carregarNaoLidas().catch(() => {});
+    } else {
+      fecharChat();
+    }
+  }
+
+  function fecharChat() {
+    document.getElementById('chat-painel').style.display = 'none';
+    if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
+  }
+
+  // ── NAVEGAR ────────────────────────────────────────
+  function abrirCanalChat(canal, btn) {
+    chatTipo    = 'geral';
+    chatCanal   = 'geral';
+    chatDestino = '';
+
+    document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    document.getElementById('chat-lista-obras').style.display    = 'none';
+    document.getElementById('chat-lista-usuarios').style.display = 'none';
+    document.getElementById('chat-canal-info').style.display     = 'none';
+    document.getElementById('chat-mensagens').style.display      = 'flex';
+    document.getElementById('chat-input-area').style.display     = 'flex';
+    document.getElementById('chat-canal-titulo').textContent     = 'Chat Geral';
+
+    carregarMensagensCanal('geral', 'geral', '');
+    marcarComoLido('geral');
+  }
+
+  function mostrarListaObras() {
+    document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('btn-tab-obra').classList.add('active');
+    document.getElementById('chat-lista-obras').style.display    = 'flex';
+    document.getElementById('chat-lista-usuarios').style.display = 'none';
+    document.getElementById('chat-mensagens').style.display      = 'none';
+    document.getElementById('chat-input-area').style.display     = 'none';
+    document.getElementById('chat-canal-info').style.display     = 'none';
+    document.getElementById('chat-criar-grupo').style.display    = 'none';
+
+    // Mostra botão de criar grupo só para admin
+    document.getElementById('chat-obras-admin').style.display = isAdmin ? 'block' : 'none';
+
+    carregarGruposObra();
+  }
+
+  async function carregarGruposObra() {
+    const items = document.getElementById('chat-obras-items');
+    items.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">Carregando...</div>';
+
+    const { data, error } = await sb.from('chat_grupos_obra').select('*').order('nome_obra');
+
+    if (error || !data) {
+      items.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">Erro ao carregar grupos.</div>';
+      return;
+    }
+
+    items.innerHTML = data.length === 0
+      ? `<div style="padding:16px;color:var(--muted);font-size:13px;">${isAdmin ? 'Nenhum grupo criado. Clique em "+ Criar grupo de obra".' : 'Nenhum grupo disponível.'}</div>`
+      : data.map(g => {
+          const canal = 'obra:' + g.nome_obra;
+          const n     = chatNaoLidas[canal] || 0;
+          const del   = isAdmin ? `<button onclick="deletarGrupoObra('${escapeHTML(g.id)}','${escapeHTML(g.nome_obra).replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;" title="Excluir grupo">✕</button>` : '';
+          return `<div class="chat-lista-item">
+            <span onclick="abrirCanalObra('${escapeHTML(g.nome_obra).replace(/'/g,"\\'")}')">🏗 ${escapeHTML(g.nome_obra)}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${n > 0 ? `<span class="chat-lista-badge">${n}</span>` : ''}
+              ${del}
+            </div>
+          </div>`;
+        }).join('');
+  }
+
+  function mostrarCriarGrupoObra() {
+    const el = document.getElementById('chat-criar-grupo');
+    el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+    if (el.style.display === 'flex') document.getElementById('chat-nova-obra').focus();
+  }
+
+  async function criarGrupoObra() {
+    const nome = document.getElementById('chat-nova-obra').value.trim();
+    if (!nome) { mostrarToast('Digite o nome da obra.', 'erro'); return; }
+
+    const { error } = await sb.from('chat_grupos_obra').insert({
+      nome_obra: nome, criado_por: currentUser.id
+    });
+
+    if (error) {
+      mostrarToast(error.code === '23505' ? 'Grupo já existe.' : 'Erro ao criar grupo.', 'erro');
+      return;
+    }
+
+    document.getElementById('chat-nova-obra').value = '';
+    document.getElementById('chat-criar-grupo').style.display = 'none';
+    mostrarToast('Grupo criado!');
+    carregarGruposObra();
+  }
+
+  async function deletarGrupoObra(id, nome) {
+    if (!confirm(`Excluir o grupo "${nome}"? As mensagens serão perdidas.`)) return;
+    await sb.from('chat_grupos_obra').delete().eq('id', id);
+    carregarGruposObra();
+    mostrarToast('Grupo excluído.', 'info');
+  }
+
+  function abrirCanalObra(nomeObra) {
+    chatTipo    = 'obra';
+    chatCanal   = 'obra:' + nomeObra;
+    chatDestino = nomeObra;
+
+    document.getElementById('chat-lista-obras').style.display    = 'none';
+    document.getElementById('chat-canal-info').style.display     = 'flex';
+    document.getElementById('chat-canal-titulo').textContent     = '🏗 ' + nomeObra;
+    document.getElementById('chat-mensagens').style.display      = 'flex';
+    document.getElementById('chat-input-area').style.display     = 'flex';
+
+    carregarMensagensCanal('obra', chatCanal, nomeObra);
+    marcarComoLido('obra:' + nomeObra);
+  }
+
+  function mostrarListaUsuarios() {
+    document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('btn-tab-direto').classList.add('active');
+    document.getElementById('chat-lista-usuarios').style.display = 'flex';
+    document.getElementById('chat-lista-obras').style.display    = 'none';
+    document.getElementById('chat-mensagens').style.display      = 'none';
+    document.getElementById('chat-input-area').style.display     = 'none';
+    document.getElementById('chat-canal-info').style.display     = 'none';
+
+    // Busca todos os perfis cadastrados
+    sb.from('profiles').select('id,nome').then(({ data }) => {
+      const outros = (data || []).filter(p => p.id !== currentUser.id && p.nome);
+      const items  = document.getElementById('chat-usuarios-items');
+      items.innerHTML = outros.length === 0
+        ? `<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum outro usuário cadastrado.</div>`
+        : outros.map(u => {
+            const canalDir = canalDireto(currentUser.id, u.id);
+            const n = chatNaoLidas[canalDir] || 0;
+            return `<div class="chat-lista-item" onclick="abrirCanalDireto('${u.id}','${escapeHTML(u.nome).replace(/'/g,"\\'")}')">
+              👤 ${escapeHTML(u.nome)}
+              ${n > 0 ? `<span class="chat-lista-badge">${n}</span>` : ''}
+            </div>`;
+          }).join('');
+    });
+  }
+
+  function abrirCanalDireto(userId, nomeUsuario) {
+    chatTipo    = 'direto';
+    chatDestino = userId;
+    chatCanal   = canalDireto(currentUser.id, userId);
+
+    document.getElementById('chat-lista-usuarios').style.display = 'none';
+    document.getElementById('chat-canal-info').style.display     = 'flex';
+    document.getElementById('chat-canal-titulo').textContent     = '👤 ' + nomeUsuario;
+    document.getElementById('chat-mensagens').style.display      = 'flex';
+    document.getElementById('chat-input-area').style.display     = 'flex';
+
+    const canalId = canalDireto(currentUser.id, userId);
+    carregarMensagensCanal('direto', canalId, userId);
+    marcarComoLido(canalId);
+  }
+
+  function voltarChatLista() {
+    document.getElementById('chat-canal-info').style.display = 'none';
+    document.getElementById('chat-mensagens').style.display  = 'none';
+    document.getElementById('chat-input-area').style.display = 'none';
+    if (chatTipo === 'obra')   mostrarListaObras();
+    if (chatTipo === 'direto') mostrarListaUsuarios();
+    if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
+  }
+
+  // Canal direto: ID único ordenado para garantir consistência
+  function canalDireto(idA, idB) {
+    return 'direto:' + [idA, idB].sort().join(':');
+  }
+
+  // ── MENSAGENS ──────────────────────────────────────
+  async function carregarMensagensCanal(tipo, canal, destino) {
+    const msgs = document.getElementById('chat-mensagens');
+    msgs.innerHTML = '<div class="chat-separador">Carregando...</div>';
+
+    try {
+      let query = sb.from('mensagens')
+        .select('*')
+        .eq('tipo', tipo)
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (tipo === 'obra')   query = query.eq('destino', destino);
+      if (tipo === 'direto') query = query.eq('destino', canal);
+      // geral: destino é null ou vazio — busca pelo tipo apenas
+
+      const { data, error } = await query;
+      if (error) throw error;
+      renderMensagens(data || []);
+    } catch(e) {
+      msgs.innerHTML = '<div class="chat-separador">Erro ao carregar. Tente novamente.</div>';
+      console.error('Chat erro:', e);
+      return;
+    }
+
+    // Subscreve ao canal em tempo real
+    if (chatRealtimeSub) sb.removeChannel(chatRealtimeSub);
+    chatRealtimeSub = sb.channel('chat-' + canal)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'mensagens'
+      }, payload => {
+        const r = payload.new;
+        const canalMsg = r.tipo === 'direto' ? r.destino
+                       : r.tipo === 'obra'   ? 'obra:' + r.destino
+                       : 'geral';
+        if (canalMsg === canal) {
+          adicionarMensagemNaTela(r);
+          marcarComoLido(canal);
+        } else {
+          chatNaoLidas[canalMsg] = (chatNaoLidas[canalMsg] || 0) + 1;
+          atualizarBadgeGeral();
+        }
+      })
+      .subscribe();
+  }
+
+  function renderMensagens(lista) {
+    const msgs = document.getElementById('chat-mensagens');
+    if (lista.length === 0) {
+      msgs.innerHTML = '<div class="chat-separador">Nenhuma mensagem ainda. Seja o primeiro!</div>';
+      return;
+    }
+    msgs.innerHTML = '';
+    lista.forEach(m => adicionarMensagemNaTela(m, false));
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function adicionarMensagemNaTela(m, scroll = true) {
+    const msgs  = document.getElementById('chat-mensagens');
+    const minha = m.user_id === currentUser.id;
+    const hora  = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const nome  = minha ? 'Você' : escapeHTML(m.nome || 'Usuário');
+
+    // Remove placeholder se existir
+    const placeholder = msgs.querySelector('.chat-separador');
+    if (placeholder) placeholder.remove();
+
+    const div = document.createElement('div');
+    div.className = 'msg-linha ' + (minha ? 'minha' : 'deles');
+    div.innerHTML = `
+      <div class="msg-nome">${nome}</div>
+      <div class="msg-balao">${escapeHTML(m.texto)}</div>
+      <div class="msg-hora">${hora}</div>`;
+    msgs.appendChild(div);
+    if (scroll) msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function enviarMensagem() {
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    if (!texto) return;
+    if (!perfil.nome) { mostrarToast('Preencha seus dados antes de enviar mensagens.', 'erro'); return; }
+
+    input.value = '';
+
+    const payload = {
+      user_id: currentUser.id,
+      nome:    perfil.nome,
+      tipo:    chatTipo,
+      destino: chatTipo === 'geral' ? '' : chatTipo === 'obra' ? chatDestino : chatCanal,
+      texto
+    };
+
+    const { error } = await sb.from('mensagens').insert(payload);
+    if (error) mostrarToast('Erro ao enviar mensagem.', 'erro');
+  }
+
+  // ── NÃO LIDAS ──────────────────────────────────────
+  async function carregarNaoLidas() {
+    try {
+      const { data: acessos } = await sb.from('chat_ultimo_acesso')
+        .select('canal,ultimo_acesso').eq('user_id', currentUser.id);
+
+      chatUltimoAcesso = {};
+      (acessos || []).forEach(a => { chatUltimoAcesso[a.canal] = a.ultimo_acesso; });
+
+      // Busca só mensagens de outros usuários, limite 200
+      const { data: msgs } = await sb.from('mensagens')
+        .select('tipo,destino,created_at,user_id')
+        .neq('user_id', currentUser.id)
+        .limit(200);
+
+      chatNaoLidas = {};
+      (msgs || []).forEach(m => {
+        const canal = m.tipo === 'direto' ? m.destino
+                    : m.tipo === 'obra'   ? 'obra:' + m.destino
+                    : 'geral';
+        const ultimo = chatUltimoAcesso[canal];
+        if (!ultimo || new Date(m.created_at) > new Date(ultimo)) {
+          chatNaoLidas[canal] = (chatNaoLidas[canal] || 0) + 1;
+        }
+      });
+
+      atualizarBadgeGeral();
+    } catch(e) {
+      console.error('Erro ao carregar não lidas:', e);
+    }
+  }
+
+  function atualizarBadgeGeral() {
+    const total = Object.values(chatNaoLidas).reduce((s, n) => s + n, 0);
+    const badge = document.getElementById('chat-badge');
+    if (total > 0) {
+      badge.textContent    = total > 99 ? '99+' : total;
+      badge.style.display  = 'flex';
+    } else {
+      badge.style.display  = 'none';
+    }
+  }
+
+  async function marcarComoLido(canal) {
+    chatNaoLidas[canal] = 0;
+    atualizarBadgeGeral();
+    await sb.from('chat_ultimo_acesso').upsert(
+      { user_id: currentUser.id, canal, ultimo_acesso: new Date().toISOString() },
+      { onConflict: 'user_id,canal' }
+    );
+  }
+
+  // Enter para enviar mensagem
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') enviarMensagem();
+  });
+</script>
+</body>
+</html>

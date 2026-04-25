@@ -341,7 +341,26 @@
     .busca-cards input:focus { border-color: var(--accent); }
     .busca-cards input::placeholder { color: var(--muted); }
     .resumo-card.oculto-busca { display: none; }
-    #followup-card {
+    #reunioes-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-left: 3px solid var(--info);
+      border-radius: var(--radius-lg); padding: 1rem 1.2rem;
+      margin-bottom: 1rem;
+    }
+    #reunioes-card.oculto { display: none; }
+    #reunioes-card h2 {
+      font-size: 13px; font-weight: 600;
+      color: var(--info); margin-bottom: 0.6rem;
+    }
+    .reuniao-item {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 10px; padding: 8px 10px;
+      background: var(--bg3); border-radius: var(--radius);
+    }
+    .reuniao-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .reuniao-item-data { font-size: 12px; font-weight: 600; color: var(--text); }
+    .reuniao-item-detalhe { font-size: 11px; color: var(--muted); }
+    .reuniao-hoje { border-left: 3px solid var(--accent); }
       background: var(--bg2);
       border: 1px solid rgba(240,165,0,0.3);
       border-left: 3px solid var(--accent);
@@ -565,6 +584,58 @@
     }
     #toast.show { opacity: 1; transform: translateY(0); }
 
+
+    /* ── RESERVA DE SALAS ── */
+    #reservas-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+    }
+    #reservas-box {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: 420px; max-width: 100vw;
+      background: var(--bg2); border-right: 1px solid var(--border);
+      z-index: 1001; display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    #reservas-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #reservas-form {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    #reservas-lista-wrap { padding: 14px 16px; flex: 1; }
+    .reserva-card {
+      background: var(--bg3); border-radius: var(--radius);
+      padding: 10px 14px; margin-bottom: 8px;
+      border-left: 3px solid var(--accent);
+    }
+    .reserva-card.minha { border-left-color: var(--success); }
+    .reserva-card-titulo {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .reserva-card-info { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .btn-cancelar-res {
+      background: none; border: none; color: var(--danger);
+      cursor: pointer; font-size: 12px; padding: 2px 6px;
+      border-radius: 4px; transition: background 0.15s;
+    }
+    .btn-cancelar-res:hover { background: rgba(224,90,90,0.12); }
+    .sala-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 8px; font-size: 12px; color: var(--text);
+      border-radius: 4px; background: var(--bg3); margin-bottom: 4px;
+    }
+    .sala-item button {
+      background: none; border: none; color: var(--danger);
+      cursor: pointer; font-size: 12px; padding: 1px 5px;
+    }
+    .reservas-empty {
+      text-align: center; color: var(--muted);
+      font-size: 13px; padding: 20px 0;
+    }
     /* ── CHAT ── */
     .btn-chat {
       position: relative;
@@ -628,7 +699,7 @@
       flex: 1; overflow-y: auto; padding: 8px;
     }
     .chat-lista-item {
-      padding: 10px 14px; border-radius: var(--radius);
+      padding: 6px 14px; border-radius: var(--radius);
       cursor: pointer; font-size: 13px; color: var(--text);
       display: flex; align-items: center; justify-content: space-between;
       transition: background 0.15s;
@@ -645,9 +716,25 @@
     }
     .msg-linha {
       display: flex; flex-direction: column; max-width: 80%;
+      position: relative;
     }
     .msg-linha.minha { align-self: flex-end; align-items: flex-end; }
     .msg-linha.deles  { align-self: flex-start; align-items: flex-start; }
+    .msg-acoes {
+      display: none; gap: 4px;
+      position: absolute; top: -28px; right: 0;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 3px 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 10;
+    }
+    .msg-linha:hover .msg-acoes { display: flex; }
+    .msg-linha.deles .msg-acoes { right: auto; left: 0; }
+    .msg-acao-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; padding: 2px 5px; border-radius: 5px;
+      color: var(--muted); transition: background 0.15s, color 0.15s;
+    }
+    .msg-acao-btn:hover { background: var(--bg3); color: var(--text); }
     .msg-nome { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
     .msg-balao {
       padding: 8px 12px; border-radius: 12px;
@@ -792,6 +879,10 @@
       <p>Controle diário de horas dos colaboradores</p>
     </div>
     <span class="badge-admin" id="badge-admin" style="display:none">Admin</span>
+    <!-- Botão Reservas -->
+    <button class="btn-chat" id="btn-reservas" onclick="toggleReservas()" title="Reserva de Salas">
+      🗓️
+    </button>
     <!-- Botão Chat -->
     <button class="btn-chat" id="btn-chat" onclick="toggleChat()" title="Chat">
       💬
@@ -915,6 +1006,7 @@
             <option>INCÊNDIO</option>
             <option>LUMINOTÉCNICO</option>
             <option>MEIO AMBIENTE</option>
+            <option>ORÇAMENTO</option>
             <option>PAISAGISMO</option>
             <option>PAVIMENTAÇÃO</option>
             <option>REURB</option>
@@ -924,6 +1016,7 @@
             <option>SPDA</option>
             <option>TOPOGRAFIA</option>
             <option>URBANISMO</option>
+            <option>OUTRA</option>
           </select>
         </div>
         <div class="field">
@@ -933,6 +1026,12 @@
         <button class="btn-cancelar-edicao" id="btn-cancelar-edicao" style="display:none;" onclick="cancelarEdicao()">Cancelar</button>
         <button class="btn-add" id="btn-add-salvar" onclick="salvarOuAdicionar()">+ Adicionar</button>
       </div>
+    </div>
+
+    <!-- REUNIÕES DA SEMANA -->
+    <div id="reunioes-card" class="oculto">
+      <h2>📅 Reuniões desta semana</h2>
+      <div class="followup-lista" id="reunioes-lista"></div>
     </div>
 
     <!-- FOLLOW-UP -->
@@ -1125,6 +1224,90 @@
     </div>
 
   </div><!-- /container -->
+
+<!-- ═══════════════════ PAINEL DE RESERVAS ═══════════════════ -->
+<div id="reservas-painel" style="display:none;">
+  <div id="reservas-overlay" onclick="fecharReservas()"></div>
+  <div id="reservas-box">
+
+    <div id="reservas-header">
+      <span style="font-size:15px;font-weight:700;color:var(--text);">🗓️ Reserva de Salas</span>
+      <button onclick="fecharReservas()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+
+    <!-- Formulário de nova reserva -->
+    <div id="reservas-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="res-data" />
+        </div>
+        <div class="field">
+          <label>Sala</label>
+          <select id="res-sala" class="field-select">
+            <option value="">Selecione a sala...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Início</label>
+          <input type="time" id="res-inicio" />
+        </div>
+        <div class="field">
+          <label>Fim</label>
+          <input type="time" id="res-fim" />
+        </div>
+      </div>
+      <div class="field" style="margin-top:8px;position:relative;">
+        <label>Participantes <span style="font-size:10px;color:var(--muted);">(use @ para mencionar)</span></label>
+        <input type="text" id="res-participantes" placeholder="@colaborador..." autocomplete="off" />
+        <div id="res-autocomplete" style="display:none;position:absolute;bottom:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;box-shadow:0 -4px 12px rgba(0,0,0,0.3);z-index:20;max-height:160px;overflow-y:auto;"></div>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <label>Assunto / Pauta</label>
+        <input type="text" id="res-assunto" placeholder="Ex: Reunião de projeto, Apresentação cliente..." autocomplete="off" />
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn-add" style="flex:1;" onclick="criarReserva()">+ Reservar</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="res-recorrente" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;" />
+          Reunião fixa (semanal)
+        </label>
+        <div id="res-erro" style="font-size:12px;color:var(--danger);width:100%;"></div>
+      </div>
+
+      <!-- Gerenciar salas (admin) -->
+      <div id="res-admin-salas" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">⚙️ Gerenciar salas</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="res-nova-sala" placeholder="Nome da sala" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:12px;outline:none;" />
+          <select id="res-nova-andar" class="field-select" style="width:130px;font-size:12px;padding:7px 10px;">
+            <option value="">Andar...</option>
+            <option>3º andar</option><option>4º andar</option><option>5º andar</option>
+            <option>6º andar</option><option>7º andar</option><option>8º andar</option>
+            <option>9º andar</option><option>10º andar</option><option>11º andar</option>
+            <option>12º andar</option><option>13º andar</option>
+          </select>
+          <button class="btn-add" style="height:34px;font-size:12px;" onclick="adicionarSala()">+ Sala</button>
+        </div>
+        <div id="res-lista-salas" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- Lista de reservas do dia -->
+    <div id="reservas-lista-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:600;color:var(--text);" id="reservas-lista-titulo">Reservas de hoje</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="mudarDiaReservas(-1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">‹</button>
+          <input type="date" id="res-filtro-data" onchange="carregarReservasDia()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:12px;outline:none;" />
+          <button onclick="mudarDiaReservas(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">›</button>
+        </div>
+      </div>
+      <div id="reservas-lista"></div>
+    </div>
+
+  </div>
+</div>
 <!-- ═══════════════════ PAINEL DE CHAT ═══════════════════ -->
 <div id="chat-painel" style="display:none;">
   <div id="chat-overlay" onclick="fecharChat()"></div>
@@ -1140,7 +1323,7 @@
 
     <!-- Sub-lista obras -->
     <div id="chat-lista-obras" style="display:none;">
-      <div id="chat-obras-admin" style="display:none;padding:8px;">
+      <div id="chat-obras-admin" style="display:none;padding:8px 8px 4px;">
         <button class="btn-add" style="width:100%;font-size:12px;height:34px;" onclick="mostrarCriarGrupoObra()">+ Criar grupo de obra</button>
       </div>
       <div id="chat-criar-grupo" style="display:none;padding:8px;gap:8px;flex-direction:column;">
@@ -1151,11 +1334,21 @@
           <button class="btn-filter" style="height:34px;" onclick="document.getElementById('chat-criar-grupo').style.display='none'">Cancelar</button>
         </div>
       </div>
+      <div style="padding:4px 8px 4px;">
+        <input type="text" id="busca-obra-chat" placeholder="Buscar obra / grupo..."
+          oninput="filtrarObrasChat()"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+      </div>
       <div id="chat-obras-items"></div>
     </div>
 
     <!-- Sub-lista usuários -->
     <div id="chat-lista-usuarios" style="display:none;">
+      <div style="padding:8px 8px 4px;">
+        <input type="text" id="busca-usuario-chat" placeholder="Buscar colaborador..."
+          oninput="filtrarUsuariosChat()"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+      </div>
       <div id="chat-usuarios-items"></div>
     </div>
 
@@ -1166,7 +1359,12 @@
     </div>
     <div id="chat-mensagens"></div>
     <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="Digite uma mensagem..." autocomplete="off" />
+      <div id="chat-autocomplete" class="chat-autocomplete" style="display:none;"></div>
+      <div id="chat-reply-preview" class="msg-resposta-preview" style="display:none;">
+        <span id="chat-reply-texto"></span>
+        <button onclick="cancelarResposta()">✕</button>
+      </div>
+      <input type="text" id="chat-input" placeholder="Digite uma mensagem... (use @ para mencionar)" autocomplete="off" />
       <button id="chat-send" onclick="enviarMensagem()">➤</button>
     </div>
   </div>
@@ -1239,7 +1437,7 @@
       document.getElementById('tabs-bar').appendChild(t);
 
       document.getElementById('panel-admin').classList.add('active');
-      carregarDadosAdmin().then(() => renderAdmin());
+      carregarDadosAdmin().then(() => { renderAdmin(); renderFollowUp(); renderReunioesSemana(); });
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
 
@@ -1252,6 +1450,8 @@
       if (!perfil.nome) abrirPainelDados();
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
+      // Registra push em background sem bloquear
+      setTimeout(() => registrarPush().catch(() => {}), 3000);
     }
   }
 
@@ -1490,6 +1690,7 @@
     aplicarPerfil();
     fecharPainelDados();
     renderFollowUp();
+    renderReunioesSemana();
     mostrarToast('Dados salvos com sucesso!');
     mostrarLoading(false);
   }
@@ -1699,6 +1900,7 @@
     renderPorColaborador();
     renderPorObra();
     renderFollowUp();
+    renderReunioesSemana();
     atualizarIconesSort();
   }
 
@@ -2011,8 +2213,61 @@
 
   // FOLLOW-UP
   // ═══════════════════════════════════════════════════
+  async function renderReunioesSemana() {
+    const card = document.getElementById('reunioes-card');
+    if (!perfil.nome) { card.classList.add('oculto'); return; }
+
+    const hoje = toLocalISO(new Date());
+    // Fim da semana = próximo domingo
+    const dFim = new Date();
+    dFim.setDate(dFim.getDate() + (7 - dFim.getDay()));
+    const fim = toLocalISO(dFim);
+
+    const { data: reservas } = await sb.from('reservas')
+      .select('*, salas(nome, andar)')
+      .gte('data', hoje)
+      .lte('data', fim)
+      .order('data').order('hora_inicio');
+
+    if (!reservas) { card.classList.add('oculto'); return; }
+
+    // Filtra: organizador OU mencionado nos participantes
+    const primeiroNome = perfil.nome.split(' ')[0].toLowerCase();
+    const minhas = reservas.filter(r =>
+      r.user_id === currentUser.id ||
+      (r.participantes && r.participantes.toLowerCase().includes(primeiroNome))
+    );
+
+    if (minhas.length === 0) { card.classList.add('oculto'); return; }
+
+    const nomeDia = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    document.getElementById('reunioes-lista').innerHTML = minhas.map(r => {
+      const sala    = r.salas ? `${r.salas.nome} — ${r.salas.andar}` : '—';
+      const horario = `${r.hora_inicio.slice(0,5)}–${r.hora_fim.slice(0,5)}`;
+      const dObj    = new Date(r.data + 'T12:00:00');
+      const dLabel  = r.data === hoje
+        ? `Hoje, ${horario}`
+        : `${nomeDia[dObj.getDay()]} ${dObj.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}, ${horario}`;
+      const ehOrg = r.user_id === currentUser.id;
+
+      return `<div class="reuniao-item ${r.data === hoje ? 'reuniao-hoje' : ''}">
+        <div class="reuniao-item-info">
+          <div class="reuniao-item-data">📅 ${dLabel}</div>
+          <div class="reuniao-item-detalhe">🏢 ${escapeHTML(sala)}</div>
+          ${r.assunto ? `<div class="reuniao-item-detalhe">📋 ${escapeHTML(r.assunto)}</div>` : ''}
+          <div class="reuniao-item-detalhe">👤 <b>Organizador:</b> ${escapeHTML(r.colaborador || '—')}</div>
+          ${r.participantes ? `<div class="reuniao-item-detalhe">👥 <b>Participantes:</b> ${escapeHTML(r.participantes)}</div>` : ''}
+        </div>
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:2px;">${ehOrg ? 'Organizador' : 'Participante'}</span>
+      </div>`;
+    }).join('');
+
+    card.classList.remove('oculto');
+  }
+
   function renderFollowUp() {
     const card = document.getElementById('followup-card');
+    // Admin não lança horas, então não tem follow-up de dias
     if (!perfil.nome || isAdmin) { card.classList.add('oculto'); return; }
 
     const lista  = document.getElementById('followup-lista');
@@ -2028,18 +2283,20 @@
     const nomeDia = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
     const falta   = [];
 
+    // Admin usa dadosAdmin para verificar seus próprios registros
+    const fonte = isAdmin ? dadosAdmin : dados;
+
     for (let i = 1; i <= 14; i++) {
       const d = new Date(hoje);
       d.setDate(hoje.getDate() - i);
 
-      // Ignora dias anteriores ao primeiro dia após o cadastro
       if (d < inicioPrimeiroDia) continue;
 
       const dow = d.getDay();
       if (dow === 0 || dow === 6) continue;
 
       const iso = toLocalISO(d);
-      if (!dados.some(r => r.colaborador === perfil.nome && r.data === iso)) {
+      if (!fonte.some(r => r.colaborador === perfil.nome && r.data === iso)) {
         falta.push({ iso, label: formatarData(iso), dia: nomeDia[dow] });
       }
     }
@@ -2302,9 +2559,9 @@
     if (!str || !str.includes(':')) return false;
     const [hStr, mStr] = str.split(':');
     const h = parseInt(hStr), m = parseInt(mStr);
-    if (isNaN(h)||isNaN(m)||m<0||m>59)       return false;
-    if (h<0||(h===0&&m===0))                  return false;
-    if (h>10||(h===10&&m>0))                  return false;
+    if (isNaN(h)||isNaN(m)||m<0||m>59)  return false;
+    if (h<0)                             return false;
+    if (h>10||(h===10&&m>0))             return false;
     return true;
   }
 
@@ -2353,7 +2610,90 @@
   document.getElementById('inp-horas').addEventListener('keydown', e => { if (e.key==='Enter') salvarOuAdicionar(); });
   document.getElementById('inp-obs').addEventListener('keydown',   e => { if (e.key==='Enter') salvarOuAdicionar(); });
 
-  // Inicia o app após o SDK do Supabase carregar
+  // ═══════════════════════════════════════════════════
+  // NOTIFICAÇÕES PUSH
+  // ═══════════════════════════════════════════════════
+  const VAPID_PUBLIC = 'BF9lmZcEpAQO0_fNpAY6I0uBhm1aXaLPQrra0lo9lgZezsgS-6YGATYNyQQlBYiP-dY0K1KIlqcCknvhkAQVjjM';
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw     = window.atob(base64);
+    return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function registrarPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      // Registra o Service Worker
+      const reg = await navigator.serviceWorker.register('/sw.js');
+
+      // Pede permissão se ainda não foi dada
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+
+      // Subscreve no push
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+      });
+
+      // Salva o token no Supabase
+      const token = JSON.stringify(sub);
+      await sb.from('push_tokens').upsert(
+        { user_id: currentUser.id, token },
+        { onConflict: 'user_id,token' }
+      );
+
+    } catch(e) {
+      console.log('Push não disponível:', e.message);
+    }
+  }
+
+  // Envia notificação para um usuário específico
+  async function enviarNotificacaoPush(userId, titulo, corpo, url) {
+    try {
+      const { data: tokens } = await sb.from('push_tokens')
+        .select('token').eq('user_id', userId);
+
+      if (!tokens || tokens.length === 0) return;
+
+      for (const t of tokens) {
+        const sub = JSON.parse(t.token);
+        // Usa a API do navegador para enviar via push subscription
+        // Na prática aqui usamos o showNotification local se for o próprio user
+        // Para outros usuários a notificação é enviada quando eles abrem o app
+        if (userId === currentUser.id) {
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification(titulo, {
+            body: corpo,
+            icon: '/favicon.ico',
+            tag: 'viavoz-' + Date.now(),
+            data: { url: url || '/' }
+          });
+        }
+      }
+    } catch(e) {
+      console.log('Erro push:', e);
+    }
+  }
+
+  // Notifica localmente (para o próprio usuário)
+  async function notificarLocal(titulo, corpo) {
+    if (Notification.permission !== 'granted') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(titulo, {
+        body: corpo,
+        icon: '/favicon.ico',
+        tag: 'viavoz-' + Date.now(),
+        requireInteraction: false
+      });
+    } catch(e) {}
+  }
+
+  // Aguarda o SDK do Supabase carregar antes de inicializar
   function aguardarSDK() {
     if (typeof supabase !== 'undefined' && supabase.createClient) {
 
@@ -2435,14 +2775,22 @@
       }, payload => {
         const r = payload.new;
         if (r.user_id === currentUser.id) return; // ignora as próprias
+
+        // Para mensagens diretas, só notifica se é para mim
+        if (r.tipo === 'direto' && !r.destino.includes(currentUser.id)) return;
+
         const canal = r.tipo === 'direto' ? r.destino
                     : r.tipo === 'obra'   ? 'obra:' + r.destino
                     : 'geral';
+
         // Só conta se o chat estiver fechado ou em outro canal
         const chatAberto = document.getElementById('chat-painel').style.display === 'block';
         if (!chatAberto || canal !== chatCanal) {
           chatNaoLidas[canal] = (chatNaoLidas[canal] || 0) + 1;
           atualizarBadgeGeral();
+          // Notificação push
+          const canalNome = r.tipo === 'geral' ? 'Chat Geral' : r.tipo === 'obra' ? r.destino : 'Mensagem direta';
+          notificarLocal('💬 ' + (r.nome || 'Alguém') + ' — ' + canalNome, r.texto || '');
         }
       })
       .subscribe();
@@ -2497,7 +2845,8 @@
 
     // Mostra botão de criar grupo só para admin
     document.getElementById('chat-obras-admin').style.display = isAdmin ? 'block' : 'none';
-
+    const buscaObra = document.getElementById('busca-obra-chat');
+    if (buscaObra) buscaObra.value = '';
     carregarGruposObra();
   }
 
@@ -2575,6 +2924,22 @@
     marcarComoLido('obra:' + nomeObra);
   }
 
+  function filtrarObrasChat() {
+    const termo = document.getElementById('busca-obra-chat').value.trim().toLowerCase();
+    document.querySelectorAll('#chat-obras-items .chat-lista-item').forEach(item => {
+      const nome = item.textContent.toLowerCase();
+      item.style.display = !termo || nome.includes(termo) ? '' : 'none';
+    });
+  }
+
+  function filtrarUsuariosChat() {
+    const termo = document.getElementById('busca-usuario-chat').value.trim().toLowerCase();
+    document.querySelectorAll('#chat-usuarios-items .chat-lista-item').forEach(item => {
+      const nome = item.textContent.toLowerCase();
+      item.style.display = !termo || nome.includes(termo) ? '' : 'none';
+    });
+  }
+
   function mostrarListaUsuarios() {
     document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('btn-tab-direto').classList.add('active');
@@ -2583,6 +2948,9 @@
     document.getElementById('chat-mensagens').style.display      = 'none';
     document.getElementById('chat-input-area').style.display     = 'none';
     document.getElementById('chat-canal-info').style.display     = 'none';
+    // Limpa busca
+    const busca = document.getElementById('busca-usuario-chat');
+    if (busca) busca.value = '';
 
     // Busca todos os perfis cadastrados
     sb.from('profiles').select('id,nome').then(({ data }) => {
@@ -2656,7 +3024,7 @@
       return;
     }
 
-    // Subscreve ao canal em tempo real
+    // Subscreve ao canal em tempo real (INSERT e UPDATE para edição/deleção)
     if (chatRealtimeSub) sb.removeChannel(chatRealtimeSub);
     chatRealtimeSub = sb.channel('chat-' + canal)
       .on('postgres_changes', {
@@ -2674,6 +3042,13 @@
           atualizarBadgeGeral();
         }
       })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'mensagens'
+      }, payload => {
+        const r = payload.new;
+        // Atualiza a mensagem na tela se estiver visível
+        adicionarMensagemNaTela(r, false);
+      })
       .subscribe();
   }
 
@@ -2688,6 +3063,16 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
+  // ── ESTADO DE EDIÇÃO / RESPOSTA ────────────────────────
+  let chatEditandoId  = null;
+  let chatRespondendo = null; // { id, nome, texto }
+
+  function formatarTextoMensagem(texto) {
+    if (!texto) return '';
+    // Destaca @menções
+    return escapeHTML(texto).replace(/@(\S+)/g, '<span class="msg-mencao">@$1</span>');
+  }
+
   function adicionarMensagemNaTela(m, scroll = true) {
     const msgs  = document.getElementById('chat-mensagens');
     const minha = m.user_id === currentUser.id;
@@ -2698,14 +3083,33 @@
     const placeholder = msgs.querySelector('.chat-separador');
     if (placeholder) placeholder.remove();
 
-    const div = document.createElement('div');
-    div.className = 'msg-linha ' + (minha ? 'minha' : 'deles');
+    // Verifica se já existe (para atualizar ao editar/deletar via realtime)
+    const existente = document.getElementById('msg-' + m.id);
+    const div = existente || document.createElement('div');
+    div.id        = 'msg-' + m.id;
+    div.className = 'msg-linha ' + (minha ? 'minha' : 'deles') + (m.deletado ? ' msg-deletado' : '');
+
+    const textoExibido = m.deletado
+      ? '<em>Mensagem apagada</em>'
+      : formatarTextoMensagem(m.texto);
+
+    const replyHTML = m.reply_nome ? `<div class="reply-ref">↩ <b>${escapeHTML(m.reply_nome)}</b>: ${escapeHTML((m.reply_texto||'').substring(0,60))}</div>` : '';
+
+    const acoesHTML = m.deletado ? '' : `
+      <div class="msg-acoes">
+        <button class="msg-acao-btn" onclick="responderMensagem('${m.id}')" title="Responder">↩</button>
+        ${minha ? `<button class="msg-acao-btn" onclick="editarMensagem('${m.id}')" title="Editar">✏️</button>` : ''}
+        ${minha ? `<button class="msg-acao-btn" onclick="deletarMensagem('${m.id}')" title="Apagar">🗑</button>` : ''}
+      </div>`;
+
     div.innerHTML = `
+      ${acoesHTML}
       <div class="msg-nome">${nome}</div>
-      <div class="msg-balao">${escapeHTML(m.texto)}</div>
-      <div class="msg-hora">${hora}</div>`;
-    msgs.appendChild(div);
-    if (scroll) msgs.scrollTop = msgs.scrollHeight;
+      <div class="msg-balao">${replyHTML}${textoExibido}</div>
+      <div class="msg-hora">${hora}${m.editado ? ' <span class="msg-editado">(editado)</span>' : ''}</div>`;
+
+    if (!existente) msgs.appendChild(div);
+    if (scroll && !existente) msgs.scrollTop = msgs.scrollHeight;
   }
 
   async function enviarMensagem() {
@@ -2714,19 +3118,146 @@
     if (!texto) return;
     if (!perfil.nome) { mostrarToast('Preencha seus dados antes de enviar mensagens.', 'erro'); return; }
 
+    // Modo edição
+    if (chatEditandoId) {
+      const { error } = await sb.from('mensagens')
+        .update({ texto, editado: true })
+        .eq('id', chatEditandoId).eq('user_id', currentUser.id);
+      if (error) { mostrarToast('Erro ao editar.', 'erro'); return; }
+      // Atualiza na tela
+      const div = document.getElementById('msg-' + chatEditandoId);
+      if (div) {
+        const balao = div.querySelector('.msg-balao');
+        if (balao) balao.innerHTML = formatarTextoMensagem(texto);
+        const hora  = div.querySelector('.msg-hora');
+        if (hora) hora.innerHTML = hora.textContent.split(' ')[0] + ' <span class="msg-editado">(editado)</span>';
+      }
+      chatEditandoId = null;
+      input.value = '';
+      input.placeholder = 'Digite uma mensagem... (use @ para mencionar)';
+      document.getElementById('chat-send').textContent = '➤';
+      return;
+    }
+
     input.value = '';
+    fecharAutocomplete();
 
     const payload = {
-      user_id: currentUser.id,
-      nome:    perfil.nome,
-      tipo:    chatTipo,
-      destino: chatTipo === 'geral' ? '' : chatTipo === 'obra' ? chatDestino : chatCanal,
-      texto
+      user_id:    currentUser.id,
+      nome:       perfil.nome,
+      tipo:       chatTipo,
+      destino:    chatTipo === 'geral' ? '' : chatTipo === 'obra' ? chatDestino : chatCanal,
+      texto,
+      reply_id:   chatRespondendo ? chatRespondendo.id   : null,
+      reply_nome: chatRespondendo ? chatRespondendo.nome : null,
+      reply_texto:chatRespondendo ? chatRespondendo.texto: null,
     };
 
+    cancelarResposta();
     const { error } = await sb.from('mensagens').insert(payload);
     if (error) mostrarToast('Erro ao enviar mensagem.', 'erro');
   }
+
+  // ── EDITAR ──────────────────────────────────────────
+  function editarMensagem(id) {
+    const div = document.getElementById('msg-' + id);
+    if (!div) return;
+    const balao = div.querySelector('.msg-balao');
+    const textoAtual = balao ? balao.innerText.replace('↩','').trim() : '';
+    const input = document.getElementById('chat-input');
+    input.value = textoAtual;
+    input.focus();
+    chatEditandoId = id;
+    input.placeholder = 'Editando mensagem...';
+    document.getElementById('chat-send').textContent = '✓';
+  }
+
+  // ── DELETAR ─────────────────────────────────────────
+  async function deletarMensagem(id) {
+    if (!confirm('Apagar esta mensagem?')) return;
+    const { error } = await sb.from('mensagens')
+      .update({ deletado: true })
+      .eq('id', id).eq('user_id', currentUser.id);
+    if (error) { mostrarToast('Erro ao apagar.', 'erro'); return; }
+    const div = document.getElementById('msg-' + id);
+    if (div) {
+      div.classList.add('msg-deletado');
+      const balao = div.querySelector('.msg-balao');
+      if (balao) balao.innerHTML = '<em>Mensagem apagada</em>';
+      const acoes = div.querySelector('.msg-acoes');
+      if (acoes) acoes.remove();
+    }
+  }
+
+  // ── RESPONDER ───────────────────────────────────────
+  function responderMensagem(id) {
+    const div = document.getElementById('msg-' + id);
+    if (!div) return;
+    const nome  = div.querySelector('.msg-nome').textContent;
+    const texto = div.querySelector('.msg-balao').innerText.substring(0, 80);
+    chatRespondendo = { id, nome, texto };
+    document.getElementById('chat-reply-texto').textContent = nome + ': ' + texto;
+    document.getElementById('chat-reply-preview').style.display = 'flex';
+    document.getElementById('chat-input').focus();
+  }
+
+  function cancelarResposta() {
+    chatRespondendo = null;
+    document.getElementById('chat-reply-preview').style.display = 'none';
+    document.getElementById('chat-reply-texto').textContent = '';
+  }
+
+  // ── @ MENÇÃO ────────────────────────────────────────
+  let autocompleteIndex = -1;
+
+  document.getElementById('chat-input').addEventListener('input', function() {
+    const val = this.value;
+    const pos = this.selectionStart;
+    const atPos = val.lastIndexOf('@', pos - 1);
+    if (atPos === -1) { fecharAutocomplete(); return; }
+    const termo = val.slice(atPos + 1, pos).toLowerCase();
+    const perfis = todosPerfis.filter(p => p.nome && p.nome.toLowerCase().includes(termo) && p.id !== currentUser.id);
+    if (!perfis.length) { fecharAutocomplete(); return; }
+    mostrarAutocomplete(perfis, atPos);
+  });
+
+  let todosPerfis = [];
+  sb.from('profiles').select('id,nome').then(({ data }) => { todosPerfis = data || []; });
+
+  function mostrarAutocomplete(perfis, atPos) {
+    const box = document.getElementById('chat-autocomplete');
+    autocompleteIndex = -1;
+    box.style.display = 'block';
+    box.innerHTML = perfis.map((p, i) =>
+      `<div class="chat-autocomplete-item" data-nome="${escapeHTML(p.nome)}" data-at="${atPos}" onmousedown="selecionarMencao(this)">${escapeHTML(p.nome)}</div>`
+    ).join('');
+  }
+
+  function fecharAutocomplete() {
+    document.getElementById('chat-autocomplete').style.display = 'none';
+  }
+
+  function selecionarMencao(el) {
+    const nome  = el.dataset.nome;
+    const atPos = parseInt(el.dataset.at);
+    const input = document.getElementById('chat-input');
+    const val   = input.value;
+    const pos   = input.selectionStart;
+    input.value = val.slice(0, atPos) + '@' + nome + ' ' + val.slice(pos);
+    input.focus();
+    fecharAutocomplete();
+  }
+
+  // Fecha autocomplete com Escape, navega com setas
+  document.getElementById('chat-input').addEventListener('keydown', function(e) {
+    const box   = document.getElementById('chat-autocomplete');
+    const items = box.querySelectorAll('.chat-autocomplete-item');
+    if (box.style.display === 'none') return;
+    if (e.key === 'Escape')  { fecharAutocomplete(); return; }
+    if (e.key === 'ArrowDown')  { e.preventDefault(); autocompleteIndex = Math.min(autocompleteIndex+1, items.length-1); items.forEach((it,i) => it.classList.toggle('ativo', i===autocompleteIndex)); }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); autocompleteIndex = Math.max(autocompleteIndex-1, 0); items.forEach((it,i) => it.classList.toggle('ativo', i===autocompleteIndex)); }
+    if (e.key === 'Enter' || e.key === 'Tab') { if (autocompleteIndex >= 0) { e.preventDefault(); selecionarMencao(items[autocompleteIndex]); } }
+  });
 
   // ── NÃO LIDAS ──────────────────────────────────────
   async function carregarNaoLidas() {
@@ -2745,6 +3276,11 @@
 
       chatNaoLidas = {};
       (msgs || []).forEach(m => {
+        // Para mensagens diretas, só conta se o canal inclui o ID do usuário atual
+        if (m.tipo === 'direto') {
+          if (!m.destino.includes(currentUser.id)) return; // não é para mim
+        }
+
         const canal = m.tipo === 'direto' ? m.destino
                     : m.tipo === 'obra'   ? 'obra:' + m.destino
                     : 'geral';
@@ -2779,6 +3315,404 @@
       { onConflict: 'user_id,canal' }
     );
   }
+
+  // ═══════════════════════════════════════════════════
+  // RESERVA DE SALAS
+  // ═══════════════════════════════════════════════════
+
+  function toggleReservas() {
+    const p = document.getElementById('reservas-painel');
+    if (p.style.display === 'none' || !p.style.display) {
+      p.style.display = 'block';
+      document.getElementById('res-data').value    = toLocalISO(new Date());
+      document.getElementById('res-filtro-data').value = toLocalISO(new Date());
+      document.getElementById('res-admin-salas').style.display = isAdmin ? 'block' : 'none';
+      carregarSalas();
+      carregarReservasDia();
+    } else {
+      fecharReservas();
+    }
+  }
+
+  function fecharReservas() {
+    document.getElementById('reservas-painel').style.display = 'none';
+  }
+
+  // ── SALAS ───────────────────────────────────────────
+  let salasCache = [];
+
+  async function carregarSalas() {
+    const { data } = await sb.from('salas').select('*').eq('ativo', true);
+    salasCache = data || [];
+
+    const sel = document.getElementById('res-sala');
+    sel.innerHTML = '<option value="">Selecione a sala...</option>';
+
+    // Ordena numericamente pelo andar (3º, 4º... 13º)
+    const ordenadas = [...salasCache].sort((a, b) => {
+      const na = parseInt(a.andar) || 0;
+      const nb = parseInt(b.andar) || 0;
+      return na !== nb ? na - nb : (a.nome || '').localeCompare(b.nome || '');
+    });
+
+    ordenadas.forEach(s => {
+      const opt       = document.createElement('option');
+      opt.value       = s.id;
+      const prefixo   = s.andar ? s.andar + ' - ' : '';
+      const capacidade = s.capacidade ? ` (${s.capacidade} pessoas)` : '';
+      opt.textContent = prefixo + s.nome + capacidade;
+      sel.appendChild(opt);
+    });
+
+    // Lista de salas para admin
+    if (isAdmin) renderListaSalasAdmin();
+  }
+
+  function renderListaSalasAdmin() {
+    const div = document.getElementById('res-lista-salas');
+    div.innerHTML = salasCache.length === 0
+      ? '<div style="font-size:12px;color:var(--muted);">Nenhuma sala cadastrada.</div>'
+      : salasCache.map(s => `
+          <div class="sala-item">
+            <span>🏢 ${escapeHTML(s.nome)} — ${escapeHTML(s.andar || '—')}</span>
+            <button onclick="removerSala('${s.id}')" title="Remover">✕</button>
+          </div>`).join('');
+  }
+
+  async function adicionarSala() {
+    const nome  = document.getElementById('res-nova-sala').value.trim();
+    const andar = document.getElementById('res-nova-andar').value;
+    if (!nome) { mostrarToast('Digite o nome da sala.', 'erro'); return; }
+
+    const { error } = await sb.from('salas').insert({ nome, andar: andar || null });
+    if (error) { mostrarToast('Erro ao adicionar sala.', 'erro'); return; }
+
+    document.getElementById('res-nova-sala').value  = '';
+    document.getElementById('res-nova-andar').value = '';
+    mostrarToast('Sala adicionada!');
+    carregarSalas();
+  }
+
+  async function removerSala(id) {
+    if (!confirm('Remover esta sala? As reservas existentes serão canceladas.')) return;
+    await sb.from('salas').update({ ativo: false }).eq('id', id);
+    mostrarToast('Sala removida.');
+    carregarSalas();
+  }
+
+  // ── RESERVAS ────────────────────────────────────────
+  async function criarReserva() {
+    const salaId       = document.getElementById('res-sala').value;
+    const data         = document.getElementById('res-data').value;
+    const inicio       = document.getElementById('res-inicio').value;
+    const fim          = document.getElementById('res-fim').value;
+    const assunto      = document.getElementById('res-assunto').value.trim();
+    const participantes= document.getElementById('res-participantes').value.trim();
+    const recorrente   = document.getElementById('res-recorrente').checked;
+    const erro         = document.getElementById('res-erro');
+
+    erro.textContent = '';
+    if (!salaId)  { erro.textContent = 'Selecione uma sala.'; return; }
+    if (!data)    { erro.textContent = 'Selecione a data.'; return; }
+    if (!inicio)  { erro.textContent = 'Informe o horario de inicio.'; return; }
+    if (!fim)     { erro.textContent = 'Informe o horario de fim.'; return; }
+    if (inicio >= fim) { erro.textContent = 'Horario de fim deve ser apos o inicio.'; return; }
+
+    const { data: conflitos } = await sb.from('reservas')
+      .select('id,colaborador,hora_inicio,hora_fim')
+      .eq('sala_id', salaId).eq('data', data)
+      .lt('hora_inicio', fim).gt('hora_fim', inicio);
+
+    if (conflitos && conflitos.length > 0) {
+      const c = conflitos[0];
+      erro.textContent = 'Conflito com reserva de ' + c.colaborador + ' (' + c.hora_inicio.slice(0,5) + '-' + c.hora_fim.slice(0,5) + ').';
+      return;
+    }
+
+    const recorrenciaId = recorrente
+      ? (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+      : null;
+
+    const datas = [data];
+    if (recorrente) {
+      const base = new Date(data + 'T12:00:00');
+      for (let i = 1; i < 12; i++) {
+        const d = new Date(base);
+        d.setDate(base.getDate() + i * 7);
+        datas.push(toLocalISO(d));
+      }
+    }
+
+    const payload = datas.map(dt => ({
+      sala_id: salaId, user_id: currentUser.id,
+      colaborador: perfil.nome, data: dt,
+      hora_inicio: inicio, hora_fim: fim,
+      assunto: assunto || null, participantes: participantes || null,
+      recorrente, recorrencia_id: recorrenciaId
+    }));
+
+    const { error } = await sb.from('reservas').insert(payload);
+    if (error) { erro.textContent = 'Erro ao reservar. Tente novamente.'; return; }
+
+    mostrarToast(recorrente ? 'Reuniao fixa criada para as proximas 12 semanas!' : 'Sala reservada com sucesso!');
+    // Notifica localmente o próprio criador
+    notificarLocal('📅 Reserva confirmada', (assunto || 'Reunião') + ' — ' + inicio + ' às ' + fim);
+    document.getElementById('res-assunto').value       = '';
+    document.getElementById('res-participantes').value = '';
+    document.getElementById('res-recorrente').checked  = false;
+    document.getElementById('res-filtro-data').value   = data;
+    carregarReservasDia();
+  }
+  async function carregarReservasDia() {
+    const filtroInput = document.getElementById('res-filtro-data');
+    const data  = filtroInput.value || toLocalISO(new Date());
+    const lista = document.getElementById('reservas-lista');
+    const titulo = document.getElementById('reservas-lista-titulo');
+
+    lista.innerHTML = '<div class="reservas-empty">Carregando...</div>';
+
+    // Busca reservas a partir da data selecionada
+    const { data: reservas } = await sb.from('reservas')
+      .select('*, salas(nome, andar)')
+      .gte('data', data)
+      .order('data')
+      .order('hora_inicio');
+
+    const hoje = toLocalISO(new Date());
+    const filtrando = data !== hoje;
+    titulo.textContent = filtrando
+      ? 'Reservas a partir de ' + new Date(data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      : 'Próximas reservas';
+
+    if (!reservas || reservas.length === 0) {
+      lista.innerHTML = '<div class="reservas-empty">Nenhuma reserva futura.</div>';
+      return;
+    }
+
+    // Agrupa por data para facilitar leitura
+    const porData = {};
+    reservas.forEach(r => {
+      if (!porData[r.data]) porData[r.data] = [];
+      porData[r.data].push(r);
+    });
+
+    lista.innerHTML = Object.entries(porData).map(([dt, items]) => {
+      const dLabel = new Date(dt + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+      const isHoje = dt === hoje;
+
+      const cards = items.map(r => {
+        const minha    = r.user_id === currentUser.id;
+        const sala     = r.salas ? `${r.salas.nome} — ${r.salas.andar || ''}` : '—';
+        const horario  = `${r.hora_inicio.slice(0,5)} – ${r.hora_fim.slice(0,5)}`;
+        const tagFixa  = r.recorrente ? `<span style="font-size:10px;background:rgba(74,175,136,0.15);color:var(--success);padding:1px 6px;border-radius:4px;">🔁 Fixa</span>` : '';
+        const btnCanc  = minha
+          ? `<button class="btn-cancelar-res" onclick="cancelarReserva('${r.id}','${r.recorrencia_id||''}')">✕ Cancelar</button>`
+          : '';
+        const btnEdit  = minha
+          ? `<button class="btn-cancelar-res" style="color:var(--accent);" onclick="editarReserva('${r.id}')">✎ Editar</button>`
+          : '';
+        return `<div class="reserva-card ${minha ? 'minha' : ''}" id="res-card-${r.id}">
+          <div class="reserva-card-titulo">
+            <span style="display:flex;align-items:center;gap:6px;">🏢 ${escapeHTML(sala)} ${tagFixa}</span>
+            <div style="display:flex;gap:4px;">${btnEdit}${btnCanc}</div>
+          </div>
+          <div class="reserva-card-info">⏰ ${horario} &nbsp;·&nbsp; 👤 ${escapeHTML(r.colaborador || '—')}</div>
+          ${r.participantes ? `<div class="reserva-card-info" style="margin-top:3px;">👥 ${escapeHTML(r.participantes)}</div>` : ''}
+          ${r.assunto ? `<div class="reserva-card-info" style="margin-top:3px;">📋 ${escapeHTML(r.assunto)}</div>` : ''}
+        </div>`;
+      }).join('');
+
+      return `<div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:${isHoje ? 'var(--accent)' : 'var(--muted)'};text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px;">
+          ${isHoje ? '● HOJE — ' : ''}${dLabel}
+        </div>
+        ${cards}
+      </div>`;
+    }).join('');
+  }
+
+  async function cancelarReserva(id, recorrenciaId) {
+    let cancelarTodas = false;
+    if (recorrenciaId) {
+      const resp = confirm('Esta é uma reunião fixa.\n\nOK = Cancelar TODAS as ocorrências futuras\nCancelar = Cancelar só esta data');
+      cancelarTodas = resp;
+    } else {
+      if (!confirm('Cancelar esta reserva?')) return;
+    }
+
+    const hoje = toLocalISO(new Date());
+
+    if (cancelarTodas && recorrenciaId) {
+      const { error } = await sb.from('reservas')
+        .delete()
+        .eq('recorrencia_id', recorrenciaId)
+        .eq('user_id', currentUser.id)
+        .gte('data', hoje);
+      if (error) { mostrarToast('Erro ao cancelar.', 'erro'); return; }
+      mostrarToast('Todas as ocorrências futuras canceladas.');
+    } else {
+      const { error } = await sb.from('reservas').delete().eq('id', id).eq('user_id', currentUser.id);
+      if (error) { mostrarToast('Erro ao cancelar.', 'erro'); return; }
+      mostrarToast('Reserva cancelada.');
+    }
+    carregarReservasDia();
+  }
+
+  let resEditandoId = null;
+
+  async function editarReserva(id) {
+    // Busca os dados da reserva
+    const { data: r } = await sb.from('reservas').select('*').eq('id', id).single();
+    if (!r) return;
+
+    resEditandoId = id;
+
+    // Preenche o formulário com os dados existentes
+    document.getElementById('res-data').value          = r.data;
+    document.getElementById('res-sala').value          = r.sala_id;
+    document.getElementById('res-inicio').value        = r.hora_inicio.slice(0,5);
+    document.getElementById('res-fim').value           = r.hora_fim.slice(0,5);
+    document.getElementById('res-participantes').value = r.participantes || '';
+    document.getElementById('res-assunto').value       = r.assunto || '';
+
+    // Troca o botão para "Salvar edição"
+    const btnAdd = document.querySelector('#reservas-form .btn-add');
+    btnAdd.textContent  = '✓ Salvar edição';
+    btnAdd.onclick      = salvarEdicaoReserva;
+
+    // Adiciona botão cancelar edição se não existir
+    let btnCancelarEdit = document.getElementById('btn-cancelar-edit-res');
+    if (!btnCancelarEdit) {
+      btnCancelarEdit = document.createElement('button');
+      btnCancelarEdit.id        = 'btn-cancelar-edit-res';
+      btnCancelarEdit.className = 'btn-filter';
+      btnCancelarEdit.textContent = 'Cancelar';
+      btnCancelarEdit.onclick   = cancelarEdicaoReserva;
+      btnAdd.parentNode.insertBefore(btnCancelarEdit, btnAdd.nextSibling);
+    }
+    btnCancelarEdit.style.display = '';
+
+    // Rola até o formulário
+    document.getElementById('reservas-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    mostrarToast('Edite os campos e clique em Salvar.');
+  }
+
+  async function salvarEdicaoReserva() {
+    const salaId       = document.getElementById('res-sala').value;
+    const data         = document.getElementById('res-data').value;
+    const inicio       = document.getElementById('res-inicio').value;
+    const fim          = document.getElementById('res-fim').value;
+    const assunto      = document.getElementById('res-assunto').value.trim();
+    const participantes= document.getElementById('res-participantes').value.trim();
+    const erro         = document.getElementById('res-erro');
+
+    erro.textContent = '';
+    if (!salaId)  { erro.textContent = 'Selecione uma sala.'; return; }
+    if (!data)    { erro.textContent = 'Selecione a data.'; return; }
+    if (!inicio)  { erro.textContent = 'Informe o horário de início.'; return; }
+    if (!fim)     { erro.textContent = 'Informe o horário de fim.'; return; }
+    if (inicio >= fim) { erro.textContent = 'Horário de fim deve ser após o início.'; return; }
+
+    // Verifica conflito (ignorando a própria reserva)
+    const { data: conflitos } = await sb.from('reservas')
+      .select('id,colaborador,hora_inicio,hora_fim')
+      .eq('sala_id', salaId).eq('data', data)
+      .neq('id', resEditandoId)
+      .lt('hora_inicio', fim).gt('hora_fim', inicio);
+
+    if (conflitos && conflitos.length > 0) {
+      const c = conflitos[0];
+      erro.textContent = `Conflito com reserva de ${c.colaborador} (${c.hora_inicio.slice(0,5)}–${c.hora_fim.slice(0,5)}).`;
+      return;
+    }
+
+    const { error } = await sb.from('reservas')
+      .update({ sala_id: salaId, data, hora_inicio: inicio, hora_fim: fim,
+                assunto: assunto || null, participantes: participantes || null })
+      .eq('id', resEditandoId).eq('user_id', currentUser.id);
+
+    if (error) { erro.textContent = 'Erro ao salvar. Tente novamente.'; return; }
+
+    mostrarToast('Reserva atualizada!');
+    cancelarEdicaoReserva();
+    document.getElementById('res-filtro-data').value = data;
+    carregarReservasDia();
+  }
+
+  function cancelarEdicaoReserva() {
+    resEditandoId = null;
+    ['res-data','res-sala','res-inicio','res-fim','res-assunto','res-participantes']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('res-data').value = toLocalISO(new Date());
+    const btnAdd = document.querySelector('#reservas-form .btn-add');
+    btnAdd.textContent = '+ Reservar';
+    btnAdd.onclick     = criarReserva;
+    const btnCancelarEdit = document.getElementById('btn-cancelar-edit-res');
+    if (btnCancelarEdit) btnCancelarEdit.style.display = 'none';
+    document.getElementById('res-erro').textContent = '';
+  }
+
+  function mudarDiaReservas(delta) {
+    const input = document.getElementById('res-filtro-data');
+    const d = new Date((input.value || toLocalISO(new Date())) + 'T12:00:00');
+    d.setDate(d.getDate() + delta);
+    input.value = toLocalISO(d);
+    carregarReservasDia();
+  }
+
+  // ── @ MENÇÃO NO CAMPO PARTICIPANTES ────────────────
+  let resAutoIdx = -1;
+
+  document.getElementById('res-participantes').addEventListener('input', function() {
+    const val = this.value;
+    const pos = this.selectionStart;
+    const atPos = val.lastIndexOf('@', pos - 1);
+    if (atPos === -1) { fecharResAutocomplete(); return; }
+    const termo = val.slice(atPos + 1, pos).toLowerCase();
+    const filtrados = todosPerfis.filter(p => p.nome && p.nome.toLowerCase().includes(termo));
+    if (!filtrados.length) { fecharResAutocomplete(); return; }
+    mostrarResAutocomplete(filtrados, atPos);
+  });
+
+  function mostrarResAutocomplete(perfis, atPos) {
+    const box = document.getElementById('res-autocomplete');
+    resAutoIdx = -1;
+    box.style.display = 'block';
+    box.innerHTML = perfis.map(p =>
+      `<div class="chat-autocomplete-item" data-nome="${escapeHTML(p.nome)}" data-at="${atPos}"
+        onmousedown="selecionarResParticipante(this)">${escapeHTML(p.nome)}</div>`
+    ).join('');
+  }
+
+  function fecharResAutocomplete() {
+    const box = document.getElementById('res-autocomplete');
+    if (box) box.style.display = 'none';
+  }
+
+  function selecionarResParticipante(el) {
+    const nome  = el.dataset.nome;
+    const atPos = parseInt(el.dataset.at);
+    const input = document.getElementById('res-participantes');
+    const val   = input.value;
+    const pos   = input.selectionStart;
+    input.value = val.slice(0, atPos) + '@' + nome + ' ' + val.slice(pos);
+    input.focus();
+    fecharResAutocomplete();
+  }
+
+  document.getElementById('res-participantes').addEventListener('keydown', function(e) {
+    const box   = document.getElementById('res-autocomplete');
+    const items = box.querySelectorAll('.chat-autocomplete-item');
+    if (box.style.display === 'none') return;
+    if (e.key === 'Escape') { fecharResAutocomplete(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); resAutoIdx = Math.min(resAutoIdx+1, items.length-1); items.forEach((it,i) => it.classList.toggle('ativo', i===resAutoIdx)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); resAutoIdx = Math.max(resAutoIdx-1, 0); items.forEach((it,i) => it.classList.toggle('ativo', i===resAutoIdx)); }
+    if ((e.key === 'Enter' || e.key === 'Tab') && resAutoIdx >= 0) { e.preventDefault(); selecionarResParticipante(items[resAutoIdx]); }
+  });
+
+  document.getElementById('res-participantes').addEventListener('blur', () => {
+    setTimeout(fecharResAutocomplete, 150);
+  });
 
   // Enter para enviar mensagem
   document.getElementById('chat-input').addEventListener('keydown', e => {

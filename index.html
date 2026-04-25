@@ -1431,12 +1431,12 @@
     if (tabAdmin) tabAdmin.remove();
 
     if (isAdmin) {
-      // Admin: esconde formulário, follow-up, banner e abas de colaborador
-      document.getElementById('form-card').style.display     = 'none';
-      document.getElementById('followup-card').classList.add('oculto');
-      document.getElementById('reunioes-card').classList.remove('oculto');
+      // Admin: esconde formulário, follow-up, banner e aba de registros
+      document.getElementById('form-card').style.display      = 'none';
+      document.getElementById('followup-card').style.display  = 'none';  // força permanente
+      document.getElementById('reunioes-card').style.display  = '';
       document.getElementById('banner-perfil').classList.add('oculto');
-      document.getElementById('badge-admin').style.display   = 'inline';
+      document.getElementById('badge-admin').style.display    = 'inline';
       // Esconde só a aba "Todos os Registros" para o admin
       document.querySelectorAll('#tabs-bar .tab').forEach(t => {
         if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'registros'")) {
@@ -1455,9 +1455,13 @@
       document.getElementById('tabs-bar').appendChild(t);
 
       document.getElementById('panel-admin').classList.add('active');
-      carregarDadosAdmin().then(() => { renderAdmin(); renderReunioesSemana(); renderAlertasAtraso(); });
-      // Garante que follow-up nunca aparece para admin
-      document.getElementById('followup-card').classList.add('oculto');
+      carregarDadosAdmin().then(() => {
+        renderAdmin();
+        renderReunioesSemana();
+        renderAlertasAtraso();
+        document.getElementById('followup-card').style.display = 'none';
+      });
+      document.getElementById('followup-card').style.display  = 'none';
       document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
@@ -2350,8 +2354,12 @@
 
   function renderFollowUp() {
     const card = document.getElementById('followup-card');
-    // Admin não lança horas, então não tem follow-up de dias
-    if (!perfil.nome || isAdmin) { card.classList.add('oculto'); return; }
+    if (!perfil.nome || isAdmin) {
+      card.style.display = 'none';
+      return;
+    }
+    // Colaborador: reseta display para o CSS da classe controlar
+    card.style.display = '';
 
     const lista  = document.getElementById('followup-lista');
     const hoje   = new Date();

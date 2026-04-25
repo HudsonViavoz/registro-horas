@@ -1176,6 +1176,15 @@
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
     <div id="panel-admin" class="panel">
 
+      <!-- Card de alertas de atraso -->
+      <div id="alertas-atraso" style="display:none;margin-bottom:1rem;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--danger);border-radius:var(--radius-lg);padding:1rem 1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:var(--danger);">⚠ Colaboradores com dias em atraso</span>
+          <span id="alertas-atraso-total" style="font-size:11px;color:var(--muted);"></span>
+        </div>
+        <div id="alertas-atraso-lista" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
       <!-- Filtros rápidos de período -->
       <div class="filtros-rapidos">
         <button class="btn-periodo" onclick="filtrarPeriodoAdmin('hoje',      this)">Hoje</button>
@@ -1422,11 +1431,20 @@
     if (tabAdmin) tabAdmin.remove();
 
     if (isAdmin) {
-      // Admin: esconde formulário, follow-up e banner
+      // Admin: esconde formulário, follow-up, banner e abas de colaborador
       document.getElementById('form-card').style.display     = 'none';
       document.getElementById('followup-card').classList.add('oculto');
+      document.getElementById('reunioes-card').classList.remove('oculto');
       document.getElementById('banner-perfil').classList.add('oculto');
       document.getElementById('badge-admin').style.display   = 'inline';
+      // Esconde só a aba "Todos os Registros" para o admin
+      document.querySelectorAll('#tabs-bar .tab').forEach(t => {
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'registros'")) {
+          t.style.display = 'none';
+        } else {
+          t.style.display = '';
+        }
+      });
 
       // Adiciona aba Admin
       const t = document.createElement('div');
@@ -1437,7 +1455,10 @@
       document.getElementById('tabs-bar').appendChild(t);
 
       document.getElementById('panel-admin').classList.add('active');
-      carregarDadosAdmin().then(() => { renderAdmin(); renderFollowUp(); renderReunioesSemana(); });
+      carregarDadosAdmin().then(() => { renderAdmin(); renderReunioesSemana(); renderAlertasAtraso(); });
+      // Garante que follow-up nunca aparece para admin
+      document.getElementById('followup-card').classList.add('oculto');
+      document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
 
@@ -2179,6 +2200,68 @@
 
   function desativarPeriodosAdmin() {
     document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
+  }
+
+  // ─── ALERTAS DE ATRASO (ADMIN) ──────────────────────
+  async function renderAlertasAtraso() {
+    const card = document.getElementById('alertas-atraso');
+    if (!isAdmin) { card.style.display = 'none'; return; }
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    // Lista todos os colaboradores únicos que já têm registros
+    const colaboradores = [...new Set(dadosAdmin.map(r => r.colaborador))].filter(Boolean).sort();
+
+    if (colaboradores.length === 0) { card.style.display = 'none'; return; }
+
+    const alertas = [];
+
+    for (const nome of colaboradores) {
+      // Pega o registro mais antigo para saber desde quando o colaborador usa o sistema
+      const registrosColab = dadosAdmin.filter(r => r.colaborador === nome);
+      const primeiroRegistro = registrosColab.map(r => r.data).sort()[0];
+      if (!primeiroRegistro) continue;
+
+      const diasFalta = [];
+      for (let i = 1; i <= 14; i++) {
+        const d = new Date(hoje);
+        d.setDate(hoje.getDate() - i);
+
+        // Não cobra antes do primeiro registro
+        if (toLocalISO(d) < primeiroRegistro) continue;
+
+        const dow = d.getDay();
+        if (dow === 0 || dow === 6) continue;
+
+        const iso = toLocalISO(d);
+        if (!registrosColab.some(r => r.data === iso)) {
+          diasFalta.push(iso);
+        }
+      }
+
+      if (diasFalta.length > 0) {
+        alertas.push({ nome, dias: diasFalta.length });
+      }
+    }
+
+    if (alertas.length === 0) { card.style.display = 'none'; return; }
+
+    alertas.sort((a, b) => b.dias - a.dias);
+
+    document.getElementById('alertas-atraso-total').textContent =
+      alertas.length + ' colaborador(es) com atraso';
+
+    document.getElementById('alertas-atraso-lista').innerHTML = alertas.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        background:var(--bg3);border-radius:var(--radius);padding:7px 12px;">
+        <span style="font-size:13px;color:var(--text);">👤 ${escapeHTML(a.nome)}</span>
+        <span style="font-size:12px;color:var(--danger);font-weight:600;">
+          ${a.dias} dia${a.dias > 1 ? 's' : ''} em atraso
+        </span>
+      </div>`).join('');
+
+    card.style.display = 'block';
   }
 
   // ─── BUSCA NOS CARDS ────────────────────────────────

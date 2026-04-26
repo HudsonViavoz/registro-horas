@@ -636,6 +636,43 @@
       text-align: center; color: var(--muted);
       font-size: 13px; padding: 20px 0;
     }
+    .btn-checkin {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 6px; color: var(--muted);
+      font-size: 11px; padding: 3px 8px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      font-family: var(--font);
+    }
+    .btn-checkin:hover { border-color: var(--accent); color: var(--text); background: rgba(240,165,0,0.08); }
+
+    .card-especial {
+      opacity: 0.7;
+      border-left: 3px solid var(--muted) !important;
+    }
+    .card-especial .nome { color: var(--muted); font-size: 12px; }
+
+    /* ── CRONÔMETRO ── */
+    #cronometro-widget {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 5px 10px;
+      flex-shrink: 0;
+    }
+    #crono-display {
+      font-size: 17px; font-weight: 700; color: var(--accent);
+      font-variant-numeric: tabular-nums; min-width: 76px;
+      letter-spacing: 1px;
+    }
+    #cronometro-widget.rodando { border-color: var(--success); }
+    #cronometro-widget.rodando #crono-display { color: var(--success); }
+    #crono-play, #crono-stop {
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; padding: 2px 5px; border-radius: 4px;
+      color: var(--muted); transition: color 0.15s, background 0.15s;
+    }
+    #crono-play:hover { color: var(--success); background: rgba(76,175,136,0.12); }
+    #crono-stop:hover { color: var(--danger);  background: rgba(224,90,90,0.12); }
+
     /* ── CHAT ── */
     .btn-chat {
       position: relative;
@@ -879,6 +916,12 @@
       <p>Controle diário de horas dos colaboradores</p>
     </div>
     <span class="badge-admin" id="badge-admin" style="display:none">Admin</span>
+    <!-- Cronômetro -->
+    <div id="cronometro-widget" style="display:none;">
+      <span id="crono-display">00:00:00</span>
+      <button id="crono-play"  onclick="cronoPlayPause()" title="Play/Pause">▶</button>
+      <button id="crono-stop"  onclick="cronoZerar()"     title="Zerar">■</button>
+    </div>
     <!-- Botão Reservas -->
     <button class="btn-chat" id="btn-reservas" onclick="toggleReservas()" title="Reserva de Salas">
       🗓️
@@ -904,7 +947,7 @@
     <div class="painel-dados-inner">
       <h3>Meus Dados</h3>
       <div class="dados-grid">
-        <div class="field"><label for="d-nome">Nome completo</label><input type="text" id="d-nome" placeholder="Ex: João Silva" /></div>
+        <div class="field"><label for="d-nome">Nome completo</label><input type="text" id="d-nome" placeholder="EX: JOAO SILVA" style="text-transform:uppercase;" /></div>
         <div class="field">
           <label for="d-setor">Setor</label>
           <select id="d-setor" class="field-select">
@@ -943,7 +986,7 @@
             <option>13º andar</option>
           </select>
         </div>
-        <div class="field"><label for="d-lider">Líder / Responsável</label><input type="text" id="d-lider" placeholder="Nome do líder" /></div>
+        <div class="field"><label for="d-lider">Líder / Responsável</label><input type="text" id="d-lider" placeholder="NOME DO LIDER" style="text-transform:uppercase;" /></div>
         <div class="field"><label for="d-email">E-mail</label><input type="email" id="d-email" placeholder="seu@email.com" /></div>
         <div class="field"><label for="d-ramal">Ramal</label><input type="text" id="d-ramal" placeholder="Ex: 1234" maxlength="6" /></div>
       </div>
@@ -973,8 +1016,17 @@
         </div>
         <div class="field">
           <label>Obra / Projeto</label>
-          <input type="text" id="inp-obra" placeholder="Nome da obra" autocomplete="off" list="list-obra" />
+          <input type="text" id="inp-obra" placeholder="NOME DA OBRA" autocomplete="off" list="list-obra"
+            style="text-transform:uppercase;" />
           <datalist id="list-obra"></datalist>
+          <!-- Botões de check-in rápido -->
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+            <button type="button" class="btn-checkin" onclick="preencherCheckin('ATESTADO')">🤒 Atestado</button>
+            <button type="button" class="btn-checkin" onclick="preencherCheckin('FALTA')">❌ Falta</button>
+            <button type="button" class="btn-checkin" onclick="preencherCheckin('FERIADO')">🎉 Feriado</button>
+            <button type="button" class="btn-checkin" onclick="preencherCheckin('FERIAS')">🏖 Férias</button>
+            <button type="button" class="btn-checkin" onclick="preencherCheckin('REUNIAO DE EQUIPE')">👥 Reunião de Equipe</button>
+          </div>
         </div>
         <div class="field">
           <label>Data</label>
@@ -1433,7 +1485,8 @@
     if (isAdmin) {
       // Admin: esconde formulário, follow-up, banner e aba de registros
       document.getElementById('form-card').style.display      = 'none';
-      document.getElementById('followup-card').style.display  = 'none';  // força permanente
+      document.getElementById('followup-card').style.display  = 'none';
+      document.getElementById('cronometro-widget').style.display = 'none';
       document.getElementById('reunioes-card').style.display  = '';
       document.getElementById('banner-perfil').classList.add('oculto');
       document.getElementById('badge-admin').style.display    = 'inline';
@@ -1473,6 +1526,7 @@
       document.getElementById('panel-registros').classList.add('active');
       renderTudo();
       if (!perfil.nome) abrirPainelDados();
+      document.getElementById('cronometro-widget').style.display = 'flex';
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -1987,6 +2041,9 @@
     document.getElementById('footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
   }
 
+  // Obras especiais que não entram nos totais dos cards
+  const OBRAS_ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+
   function renderPorColaborador() {
     const grid  = document.getElementById('grid-colab');
     const fonte = isAdmin ? dadosAdmin : dados;
@@ -1994,9 +2051,13 @@
 
     fonte.forEach(r => {
       if (!mapa[r.colaborador]) mapa[r.colaborador] = { horas: 0, obras: new Set(), dias: new Set() };
-      mapa[r.colaborador].horas += r.horas;
-      mapa[r.colaborador].obras.add(r.obra);
+      // Dias trabalhados conta sempre
       mapa[r.colaborador].dias.add(r.data);
+      // Horas e obras: exclui as entradas especiais
+      if (!OBRAS_ESPECIAIS.has(r.obra)) {
+        mapa[r.colaborador].horas += r.horas;
+        mapa[r.colaborador].obras.add(r.obra);
+      }
     });
     const lista    = Object.entries(mapa).sort((a, b) => b[1].horas - a[1].horas);
     const maxHoras = lista.length > 0 ? lista[0][1].horas : 1;
@@ -2060,32 +2121,37 @@
 
   function renderPorObra() {
     const grid  = document.getElementById('grid-obra');
-    // Admin usa todos os dados; colaborador usa só os seus
     const fonte = isAdmin ? dadosAdmin : dados;
     const mapa  = {};
 
     fonte.forEach(r => {
-      if (!mapa[r.obra]) mapa[r.obra] = { horas: 0, pessoas: new Set(), dias: new Set() };
+      if (!mapa[r.obra]) mapa[r.obra] = { horas: 0, pessoas: new Set(), dias: new Set(), especial: false };
       mapa[r.obra].horas += r.horas;
       mapa[r.obra].pessoas.add(r.colaborador);
       mapa[r.obra].dias.add(r.data);
+      if (OBRAS_ESPECIAIS.has(r.obra)) mapa[r.obra].especial = true;
     });
-    const lista    = Object.entries(mapa).sort((a, b) => b[1].horas - a[1].horas);
-    const maxHoras = lista.length > 0 ? lista[0][1].horas : 1;
-    const totalG   = lista.reduce((s, [, v]) => s + v.horas, 0);
+    // Separa obras normais das especiais
+    const normais   = Object.entries(mapa).filter(([,v]) => !v.especial).sort((a,b) => b[1].horas - a[1].horas);
+    const especiais = Object.entries(mapa).filter(([,v]) =>  v.especial).sort((a,b) => a[0].localeCompare(b[0]));
+    const lista     = [...normais, ...especiais];
+    const maxHoras  = normais.length > 0 ? normais[0][1].horas : 1;
+    const totalG    = normais.reduce((s, [,v]) => s + v.horas, 0);
 
     grid.innerHTML = lista.length === 0
       ? `<div class="empty"><strong>Sem dados</strong>Adicione registros para ver o resumo.</div>`
-      : lista.map(([nome, val]) => `
-          <div class="resumo-card clicavel" onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}')">
+      : lista.map(([nome, val]) => {
+          const esp = val.especial;
+          return `<div class="resumo-card clicavel ${esp ? 'card-especial' : ''}" onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}')">
             <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
-            <div class="total-h">${decimalParaHora(val.horas)}</div>
-            <div class="sub-info">${val.pessoas.size} colaborador(es) · ${val.dias.size} dia(s) de trabalho</div>
-            <div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
+            ${!esp ? `<div class="total-h">${decimalParaHora(val.horas)}</div>` : ''}
+            <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
+            ${!esp ? `<div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>` : ''}
+          </div>`;
+        }).join('');
 
     document.getElementById('footer-obra-total').textContent =
-      lista.length > 0 ? `${lista.length} obra(s) · Total: ${decimalParaHora(totalG)}` : '';
+      normais.length > 0 ? `${normais.length} obra(s) · Total: ${decimalParaHora(totalG)}` : '';
 
     // Fecha detalhe ao re-renderizar
     fecharDetalheObra();
@@ -2266,6 +2332,15 @@
       </div>`).join('');
 
     card.style.display = 'block';
+  }
+
+  // ─── CHECK-IN RÁPIDO ────────────────────────────────
+  function preencherCheckin(tipo) {
+    document.getElementById('inp-obra').value       = tipo;
+    document.getElementById('inp-disciplina').value = 'OUTRA';
+    document.getElementById('inp-obs').value        = tipo;
+    document.getElementById('inp-horas').value      = '';
+    document.getElementById('inp-horas').focus();
   }
 
   // ─── BUSCA NOS CARDS ────────────────────────────────
@@ -2700,6 +2775,76 @@
   document.getElementById('inp-horas').addEventListener('blur',  onHoraBlur);
   document.getElementById('inp-horas').addEventListener('keydown', e => { if (e.key==='Enter') salvarOuAdicionar(); });
   document.getElementById('inp-obs').addEventListener('keydown',   e => { if (e.key==='Enter') salvarOuAdicionar(); });
+
+  // Campo Obra: força maiúsculo e remove acentos
+  document.getElementById('inp-obra').addEventListener('blur', function() {
+    this.value = this.value.toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  });
+
+  // Campos Nome e Líder: força maiúsculo e remove acentos
+  ['d-nome','d-lider'].forEach(id => {
+    document.getElementById(id).addEventListener('blur', function() {
+      this.value = this.value.toUpperCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════
+  // CRONÔMETRO
+  // ═══════════════════════════════════════════════════
+  let cronoSegundos  = 0;
+  let cronoRodando   = false;
+  let cronoInterval  = null;
+
+  function cronoAtualizar() {
+    const h  = Math.floor(cronoSegundos / 3600);
+    const m  = Math.floor((cronoSegundos % 3600) / 60);
+    const s  = cronoSegundos % 60;
+    document.getElementById('crono-display').textContent =
+      String(h).padStart(2,'0') + ':' +
+      String(m).padStart(2,'0') + ':' +
+      String(s).padStart(2,'0');
+  }
+
+  function cronoPlayPause() {
+    const widget = document.getElementById('cronometro-widget');
+    const btn    = document.getElementById('crono-play');
+    if (cronoRodando) {
+      clearInterval(cronoInterval);
+      cronoRodando = false;
+      btn.textContent = '▶';
+      widget.classList.remove('rodando');
+    } else {
+      cronoInterval = setInterval(() => { cronoSegundos++; cronoAtualizar(); }, 1000);
+      cronoRodando  = true;
+      btn.textContent = '⏸';
+      widget.classList.add('rodando');
+    }
+  }
+
+  function cronoZerar() {
+    clearInterval(cronoInterval);
+    cronoRodando   = false;
+    cronoSegundos  = 0;
+    document.getElementById('crono-play').textContent = '▶';
+    document.getElementById('cronometro-widget').classList.remove('rodando');
+    cronoAtualizar();
+  }
+
+  function cronoUsar() {
+    if (cronoSegundos === 0) { mostrarToast('Cronômetro está em 00:00:00.', 'info'); return; }
+    // Converte para H:MM
+    const h  = Math.floor(cronoSegundos / 3600);
+    const m  = Math.round((cronoSegundos % 3600) / 60);
+    const horaStr = h + ':' + String(m).padStart(2,'0');
+    // Para o cronômetro e preenche o campo de horas
+    if (cronoRodando) cronoPlayPause();
+    document.getElementById('inp-horas').value = horaStr;
+    // Rola até o formulário
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    mostrarToast('Tempo ' + horaStr + ' adicionado ao campo de horas!');
+  }
 
   // ═══════════════════════════════════════════════════
   // NOTIFICAÇÕES PUSH

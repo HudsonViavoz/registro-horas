@@ -1191,6 +1191,22 @@
         <input type="text" id="busca-obra" placeholder="Buscar obra / projeto..." autocomplete="off"
           oninput="filtrarCardsObra()" />
         <button class="btn-filter" onclick="limparBuscaObra()">Limpar</button>
+        <button id="btn-cadastrar-obras" class="btn-add" style="display:none;white-space:nowrap;height:36px;font-size:12px;" onclick="abrirCadastroObras()">⚙ Obras</button>
+      </div>
+
+      <!-- Modal cadastro de obras (admin) -->
+      <div id="modal-obras" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:700;color:var(--text);">⚙ Cadastro de Obras</span>
+          <button onclick="fecharCadastroObras()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="inp-nova-obra" placeholder="NOME DA OBRA"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
+            onkeydown="if(event.key==='Enter')adicionarObra()" />
+          <button class="btn-add" style="height:36px;font-size:12px;" onclick="adicionarObra()">+ Adicionar</button>
+        </div>
+        <div id="lista-obras-admin" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
       <div id="grid-obra" class="resumo-grid"></div>
       <div class="footer-bar"><span id="footer-obra-total" style="font-size:12px;color:var(--muted);">—</span></div>
@@ -1490,6 +1506,9 @@
       document.getElementById('reunioes-card').style.display  = '';
       document.getElementById('banner-perfil').classList.add('oculto');
       document.getElementById('badge-admin').style.display    = 'inline';
+      // Mostra botão de cadastro de obras só para admin
+      const btnCadObras = document.getElementById('btn-cadastrar-obras');
+      if (btnCadObras) btnCadObras.style.display = '';
       // Esconde só a aba "Todos os Registros" para o admin
       document.querySelectorAll('#tabs-bar .tab').forEach(t => {
         if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'registros'")) {
@@ -1514,6 +1533,7 @@
         renderAlertasAtraso();
         document.getElementById('followup-card').style.display = 'none';
       });
+      carregarObrasDB();
       document.getElementById('followup-card').style.display  = 'none';
       document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
@@ -1528,6 +1548,7 @@
       if (!perfil.nome) abrirPainelDados();
       document.getElementById('cronometro-widget').style.display = 'flex';
       cronoRestaurar();
+      carregarObrasDB();
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -2342,6 +2363,71 @@
     document.getElementById('inp-obs').value        = tipo;
     document.getElementById('inp-horas').value      = '';
     document.getElementById('inp-horas').focus();
+  }
+
+  // ─── CADASTRO DE OBRAS (ADMIN) ──────────────────────
+  let obrasCache = [];
+
+  async function carregarObrasDB() {
+    const { data } = await sb.from('obras').select('nome').eq('ativo', true).order('nome');
+    obrasCache = (data || []).map(o => o.nome);
+    // Atualiza o datalist do campo de obra no formulário
+    const dl = document.getElementById('list-obra');
+    if (dl) dl.innerHTML = obrasCache.map(n => `<option value="${escapeHTML(n)}">`).join('');
+  }
+
+  function abrirCadastroObras() {
+    const modal = document.getElementById('modal-obras');
+    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+    if (modal.style.display === 'block') {
+      renderListaObrasAdmin();
+      setTimeout(() => document.getElementById('inp-nova-obra').focus(), 100);
+    }
+  }
+
+  function fecharCadastroObras() {
+    document.getElementById('modal-obras').style.display = 'none';
+  }
+
+  function renderListaObrasAdmin() {
+    const lista = document.getElementById('lista-obras-admin');
+    lista.innerHTML = obrasCache.length === 0
+      ? '<div style="font-size:12px;color:var(--muted);padding:4px;">Nenhuma obra cadastrada.</div>'
+      : obrasCache.map(n => `
+          <div style="display:flex;align-items:center;justify-content:space-between;
+            background:var(--bg3);border-radius:var(--radius);padding:6px 10px;">
+            <span style="font-size:13px;color:var(--text);">🏗 ${escapeHTML(n)}</span>
+            <button onclick="removerObraDB('${escapeHTML(n).replace(/'/g,"\\'")}')"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;"
+              title="Remover">✕</button>
+          </div>`).join('');
+  }
+
+  async function adicionarObra() {
+    const input = document.getElementById('inp-nova-obra');
+    const nome  = input.value.trim().toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (!nome) return;
+
+    const { error } = await sb.from('obras').insert({ nome });
+    if (error) {
+      if (error.code === '23505') mostrarToast('Obra já cadastrada.', 'info');
+      else mostrarToast('Erro ao cadastrar obra.', 'erro');
+      return;
+    }
+
+    input.value = '';
+    mostrarToast('Obra cadastrada!');
+    await carregarObrasDB();
+    renderListaObrasAdmin();
+  }
+
+  async function removerObraDB(nome) {
+    if (!confirm(`Remover a obra "${nome}"?`)) return;
+    await sb.from('obras').update({ ativo: false }).eq('nome', nome);
+    mostrarToast('Obra removida.');
+    await carregarObrasDB();
+    renderListaObrasAdmin();
   }
 
   // ─── BUSCA NOS CARDS ────────────────────────────────

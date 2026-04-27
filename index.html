@@ -1527,6 +1527,7 @@
       renderTudo();
       if (!perfil.nome) abrirPainelDados();
       document.getElementById('cronometro-widget').style.display = 'flex';
+      cronoRestaurar();
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -2797,6 +2798,36 @@
   let cronoRodando   = false;
   let cronoInterval  = null;
 
+  function cronoSalvar() {
+    localStorage.setItem('crono_segundos', cronoSegundos);
+    localStorage.setItem('crono_rodando',  cronoRodando ? '1' : '0');
+    localStorage.setItem('crono_timestamp', Date.now());
+  }
+
+  function cronoRestaurar() {
+    const seg       = parseInt(localStorage.getItem('crono_segundos') || '0');
+    const rodando   = localStorage.getItem('crono_rodando') === '1';
+    const timestamp = parseInt(localStorage.getItem('crono_timestamp') || '0');
+
+    if (rodando && timestamp > 0) {
+      // Calcula quanto tempo passou desde que fechou
+      const passados = Math.floor((Date.now() - timestamp) / 1000);
+      cronoSegundos  = seg + passados;
+    } else {
+      cronoSegundos  = seg;
+    }
+
+    cronoAtualizar();
+
+    if (rodando) {
+      clearInterval(cronoInterval); // garante que não tem interval duplicado
+      cronoRodando = true;
+      document.getElementById('crono-play').textContent = '⏸';
+      document.getElementById('cronometro-widget').classList.add('rodando');
+      cronoInterval = setInterval(() => { cronoSegundos++; cronoAtualizar(); cronoSalvar(); }, 1000);
+    }
+  }
+
   function cronoAtualizar() {
     const h  = Math.floor(cronoSegundos / 3600);
     const m  = Math.floor((cronoSegundos % 3600) / 60);
@@ -2816,11 +2847,12 @@
       btn.textContent = '▶';
       widget.classList.remove('rodando');
     } else {
-      cronoInterval = setInterval(() => { cronoSegundos++; cronoAtualizar(); }, 1000);
+      cronoInterval = setInterval(() => { cronoSegundos++; cronoAtualizar(); cronoSalvar(); }, 1000);
       cronoRodando  = true;
       btn.textContent = '⏸';
       widget.classList.add('rodando');
     }
+    cronoSalvar();
   }
 
   function cronoZerar() {
@@ -2830,6 +2862,9 @@
     document.getElementById('crono-play').textContent = '▶';
     document.getElementById('cronometro-widget').classList.remove('rodando');
     cronoAtualizar();
+    localStorage.removeItem('crono_segundos');
+    localStorage.removeItem('crono_rodando');
+    localStorage.removeItem('crono_timestamp');
   }
 
   function cronoUsar() {

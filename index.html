@@ -2187,6 +2187,7 @@
       .sort((a, b) => a.data < b.data ? 1 : -1);
 
     const totalG = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
+    const tbody  = document.getElementById('detalhe-colab-body');
     tbody.innerHTML = lista.map(r => `
       <tr>
         <td>${formatarData(r.data)}</td>
@@ -2263,6 +2264,7 @@
 
     const totalG = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     const colabs = new Set(lista.map(r => r.colaborador)).size;
+    const tbody  = document.getElementById('detalhe-obra-body');
     tbody.innerHTML = lista.map(r => `
       <tr>
         <td>${formatarData(r.data)}</td>

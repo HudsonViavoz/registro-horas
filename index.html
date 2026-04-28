@@ -1150,6 +1150,8 @@
           <tbody id="tabela-body"></tbody>
         </table>
       </div>
+      <!-- Paginação -->
+      <div id="tab-paginacao" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;flex-wrap:wrap;"></div>
       <div class="footer-bar">
         <div class="footer-resumo">
           <div class="footer-bloco"><span class="footer-label">Registros</span><span class="footer-valor-reg" id="footer-qtd">—</span></div>
@@ -1291,7 +1293,22 @@
       <div id="alertas-atraso" style="display:none;margin-bottom:1rem;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--danger);border-radius:var(--radius-lg);padding:1rem 1.2rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;color:var(--danger);">⚠ Colaboradores com dias em atraso</span>
-          <span id="alertas-atraso-total" style="font-size:11px;color:var(--muted);"></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="alertas-atraso-total" style="font-size:11px;color:var(--muted);"></span>
+            <button class="btn-add" style="font-size:11px;height:28px;padding:0 10px;" onclick="toggleNotificarAtraso()">📢 Notificar</button>
+          </div>
+        </div>
+        <!-- Área de notificação -->
+        <div id="notificar-atraso-box" style="display:none;margin-bottom:10px;background:var(--bg3);border-radius:var(--radius);padding:10px;gap:8px;flex-direction:column;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Mensagem enviada no chat direto de cada colaborador em atraso:</div>
+          <textarea id="notificar-atraso-texto"
+            style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;min-height:70px;box-sizing:border-box;"
+            placeholder="Ex: Olá, você tem dias sem registro. Por favor, atualize seu controle de horas."></textarea>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-add" style="font-size:12px;height:32px;" onclick="enviarNotificacaoAtraso()">✉ Enviar para todos</button>
+            <button class="btn-filter" style="height:32px;" onclick="toggleNotificarAtraso()">Cancelar</button>
+            <span id="notificar-atraso-status" style="font-size:11px;color:var(--muted);"></span>
+          </div>
         </div>
         <div id="alertas-atraso-lista" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
@@ -1333,6 +1350,8 @@
           <tbody id="admin-body"></tbody>
         </table>
       </div>
+      <!-- Paginação -->
+      <div id="adm-paginacao" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;flex-wrap:wrap;"></div>
       <div class="footer-bar">
         <div class="footer-resumo">
           <div class="footer-bloco"><span class="footer-label">Registros</span><span class="footer-valor-reg" id="adm-footer-qtd">—</span></div>
@@ -2097,11 +2116,14 @@
     });
   }
 
-  function renderTabela() {
-    const tbody = document.getElementById('tabela-body');
-    let lista   = obterDadosFiltrados();
+  const TAB_POR_PAG = 25;
+  let tabPagAtual = 1;
+  let tabListaFiltrada = [];
 
-    lista.sort((a, b) => {
+  function renderTabela() {
+    tabListaFiltrada = obterDadosFiltrados();
+
+    tabListaFiltrada.sort((a, b) => {
       let va = a[sortCol], vb = b[sortCol];
       if (sortCol === 'horas') { va = parseFloat(va); vb = parseFloat(vb); }
       if (va < vb) return sortAsc ? -1 :  1;
@@ -2109,10 +2131,22 @@
       return 0;
     });
 
-    if (lista.length === 0) {
+    tabPagAtual = 1;
+    renderTabelaPagina();
+  }
+
+  function renderTabelaPagina() {
+    const tbody   = document.getElementById('tabela-body');
+    const total   = tabListaFiltrada.length;
+    const totalPag = Math.ceil(total / TAB_POR_PAG);
+    const inicio  = (tabPagAtual - 1) * TAB_POR_PAG;
+    const fim     = Math.min(inicio + TAB_POR_PAG, total);
+    const pagina  = tabListaFiltrada.slice(inicio, fim);
+
+    if (total === 0) {
       tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><strong>Nenhum registro encontrado</strong>Use o formulário acima para adicionar ou ajuste os filtros.</div></td></tr>`;
     } else {
-      tbody.innerHTML = lista.map(r => `
+      tbody.innerHTML = pagina.map(r => `
         <tr id="linha-${r.id}" ${editandoId === r.id ? 'class="editando-linha"' : ''}>
           <td>${formatarData(r.data)}</td>
           <td>${escapeHTML(r.colaborador)}</td>
@@ -2129,9 +2163,35 @@
         </tr>`).join('');
     }
 
-    const totalDec = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
-    document.getElementById('footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
-    document.getElementById('footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
+    // Paginação
+    const pag = document.getElementById('tab-paginacao');
+    if (totalPag <= 1) { pag.innerHTML = ''; }
+    else {
+      const btnStyle = (ativo) => `style="background:${ativo ? 'var(--accent)' : 'var(--bg3)'};color:${ativo ? '#000' : 'var(--text)'};border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:var(--font);"`;
+      let html = `<button ${btnStyle(false)} onclick="irPagTab(${tabPagAtual-1})" ${tabPagAtual===1?'disabled':''}>‹</button>`;
+      let pInicio = Math.max(1, tabPagAtual - 3);
+      let pFim    = Math.min(totalPag, tabPagAtual + 3);
+      if (pInicio > 1)     html += `<span style="color:var(--muted);font-size:12px;">...</span>`;
+      for (let p = pInicio; p <= pFim; p++) {
+        html += `<button ${btnStyle(p===tabPagAtual)} onclick="irPagTab(${p})">${p}</button>`;
+      }
+      if (pFim < totalPag) html += `<span style="color:var(--muted);font-size:12px;">...</span>`;
+      html += `<button ${btnStyle(false)} onclick="irPagTab(${tabPagAtual+1})" ${tabPagAtual===totalPag?'disabled':''}>›</button>`;
+      html += `<span style="font-size:11px;color:var(--muted);">${inicio+1}–${fim} de ${total}</span>`;
+      pag.innerHTML = html;
+    }
+
+    const totalDec = tabListaFiltrada.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
+    document.getElementById('footer-qtd').textContent   = total > 0 ? total : '—';
+    document.getElementById('footer-total').textContent = total > 0 ? decimalParaHora(totalDec) : '—';
+  }
+
+  function irPagTab(p) {
+    const totalPag = Math.ceil(tabListaFiltrada.length / TAB_POR_PAG);
+    if (p < 1 || p > totalPag) return;
+    tabPagAtual = p;
+    renderTabelaPagina();
+    document.getElementById('panel-registros').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // Obras especiais que não entram nos totais dos cards
@@ -2143,7 +2203,7 @@
     const mapa  = {};
 
     fonte.forEach(r => {
-      if (!mapa[r.colaborador]) mapa[r.colaborador] = { horas: 0, obras: new Set(), dias: new Set() };
+      if (!mapa[r.colaborador]) mapa[r.colaborador] = { horas: 0, obras: new Set(), dias: new Set(), setor: r.setor || '' };
       // Dias trabalhados conta sempre
       mapa[r.colaborador].dias.add(r.data);
       // Horas e obras: exclui as entradas especiais
@@ -2151,9 +2211,11 @@
         mapa[r.colaborador].horas += r.horas;
         mapa[r.colaborador].obras.add(r.obra);
       }
+      // Atualiza setor se ainda não tiver
+      if (!mapa[r.colaborador].setor && r.setor) mapa[r.colaborador].setor = r.setor;
     });
-    const lista    = Object.entries(mapa).sort((a, b) => b[1].horas - a[1].horas);
-    const maxHoras = lista.length > 0 ? lista[0][1].horas : 1;
+    const lista    = Object.entries(mapa).sort((a, b) => a[0].localeCompare(b[0]));
+    const maxHoras = lista.length > 0 ? Math.max(...lista.map(([,v]) => v.horas)) : 1;
     const totalG   = lista.reduce((s, [, v]) => s + v.horas, 0);
 
     grid.innerHTML = lista.length === 0
@@ -2161,9 +2223,9 @@
       : lista.map(([nome, val]) => `
           <div class="resumo-card clicavel" onclick="mostrarDetalheColab('${escapeHTML(nome).replace(/'/g,"\\'")}')">
             <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
+            ${val.setor ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(val.setor)}</div>` : ''}
             <div class="total-h">${decimalParaHora(val.horas)}</div>
             <div class="sub-info">${val.obras.size} obra(s) · ${val.dias.size} dia(s) trabalhado(s)</div>
-            <div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>
           </div>`).join('');
 
     document.getElementById('footer-colab-total').textContent =
@@ -2236,9 +2298,8 @@
           const esp = val.especial;
           return `<div class="resumo-card clicavel ${esp ? 'card-especial' : ''}" onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}')">
             <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
-            ${!esp ? `<div class="total-h">${decimalParaHora(val.horas)}</div>` : ''}
+            <div class="total-h" ${esp ? 'style="opacity:0.7;"' : ''}>${decimalParaHora(val.horas)}</div>
             <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
-            ${!esp ? `<div class="bar-wrap"><div class="bar-fill" style="width:${(val.horas/maxHoras*100).toFixed(1)}%"></div></div>` : ''}
           </div>`;
         }).join('');
 
@@ -2262,7 +2323,9 @@
       .filter(r => r.obra === nomeObra)
       .sort((a, b) => a.data < b.data ? 1 : -1);
 
-    const totalG = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
+    const totalG = OBRAS_ESPECIAIS.has(nomeObra)
+      ? lista.reduce((s, r) => s + r.horas, 0)
+      : lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     const colabs = new Set(lista.map(r => r.colaborador)).size;
     const tbody  = document.getElementById('detalhe-obra-body');
     tbody.innerHTML = lista.map(r => `
@@ -2306,13 +2369,17 @@
     if (id === 'por-colaborador')  renderPorColaborador();
   }
 
+  const ADM_POR_PAG = 25;
+  let admPagAtual = 1;
+  let admListaFiltrada = [];
+
   function renderAdmin() {
     const de    = document.getElementById('adm-de').value;
     const ate   = document.getElementById('adm-ate').value;
     const colab = document.getElementById('adm-colab').value.trim().toLowerCase();
     const obra  = document.getElementById('adm-obra').value.trim().toLowerCase();
 
-    let lista = dadosAdmin.filter(r => {
+    admListaFiltrada = dadosAdmin.filter(r => {
       if (de    && r.data < de)  return false;
       if (ate   && r.data > ate) return false;
       if (colab && !r.colaborador.toLowerCase().includes(colab)) return false;
@@ -2320,10 +2387,21 @@
       return true;
     }).sort((a, b) => a.data < b.data ? 1 : -1);
 
+    admPagAtual = 1;
+    renderAdminPagina();
+  }
+
+  function renderAdminPagina() {
+    const total   = admListaFiltrada.length;
+    const totalPag = Math.ceil(total / ADM_POR_PAG);
+    const inicio  = (admPagAtual - 1) * ADM_POR_PAG;
+    const fim     = Math.min(inicio + ADM_POR_PAG, total);
+    const pagina  = admListaFiltrada.slice(inicio, fim);
+
     const tbody = document.getElementById('admin-body');
-    tbody.innerHTML = lista.length === 0
-      ? `<tr><td colspan="6"><div class="empty"><strong>Sem registros</strong>Ajuste os filtros acima.</div></td></tr>`
-      : lista.map(r => `
+    tbody.innerHTML = total === 0
+      ? `<tr><td colspan="7"><div class="empty"><strong>Sem registros</strong>Ajuste os filtros acima.</div></td></tr>`
+      : pagina.map(r => `
           <tr>
             <td>${formatarData(r.data)}</td>
             <td>${escapeHTML(r.colaborador)}</td>
@@ -2334,9 +2412,37 @@
             <td style="color:var(--muted)">${r.obs ? escapeHTML(r.obs) : '—'}</td>
           </tr>`).join('');
 
-    const totalDec = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
-    document.getElementById('adm-footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
-    document.getElementById('adm-footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
+    // Paginação
+    const pag = document.getElementById('adm-paginacao');
+    if (totalPag <= 1) { pag.innerHTML = ''; }
+    else {
+      const btnStyle = (ativo) => `style="background:${ativo ? 'var(--accent)' : 'var(--bg3)'};color:${ativo ? '#000' : 'var(--text)'};border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:var(--font);"`;
+      let html = `<button ${btnStyle(false)} onclick="irPagAdmin(${admPagAtual-1})" ${admPagAtual===1?'disabled':''}>‹</button>`;
+
+      // Mostra até 7 páginas centradas na atual
+      let pInicio = Math.max(1, admPagAtual - 3);
+      let pFim    = Math.min(totalPag, admPagAtual + 3);
+      if (pInicio > 1)    html += `<span style="color:var(--muted);font-size:12px;">...</span>`;
+      for (let p = pInicio; p <= pFim; p++) {
+        html += `<button ${btnStyle(p===admPagAtual)} onclick="irPagAdmin(${p})">${p}</button>`;
+      }
+      if (pFim < totalPag) html += `<span style="color:var(--muted);font-size:12px;">...</span>`;
+      html += `<button ${btnStyle(false)} onclick="irPagAdmin(${admPagAtual+1})" ${admPagAtual===totalPag?'disabled':''}>›</button>`;
+      html += `<span style="font-size:11px;color:var(--muted);">${inicio+1}–${fim} de ${total}</span>`;
+      pag.innerHTML = html;
+    }
+
+    const totalDec = admListaFiltrada.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
+    document.getElementById('adm-footer-qtd').textContent   = total > 0 ? total : '—';
+    document.getElementById('adm-footer-total').textContent = total > 0 ? decimalParaHora(totalDec) : '—';
+  }
+
+  function irPagAdmin(p) {
+    const totalPag = Math.ceil(admListaFiltrada.length / ADM_POR_PAG);
+    if (p < 1 || p > totalPag) return;
+    admPagAtual = p;
+    renderAdminPagina();
+    document.getElementById('panel-admin').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function limparFiltrosAdmin() {
@@ -2364,7 +2470,45 @@
     document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
   }
 
-  // ─── ALERTAS DE ATRASO (ADMIN) ──────────────────────
+  let alertasAtrasoUsers = []; // { user_id, nome } dos colaboradores em atraso
+
+  function toggleNotificarAtraso() {
+    const box = document.getElementById('notificar-atraso-box');
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+    if (box.style.display === 'flex') {
+      document.getElementById('notificar-atraso-status').textContent = '';
+      document.getElementById('notificar-atraso-texto').focus();
+    }
+  }
+
+  async function enviarNotificacaoAtraso() {
+    const texto  = document.getElementById('notificar-atraso-texto').value.trim();
+    const status = document.getElementById('notificar-atraso-status');
+    if (!texto) { status.textContent = 'Digite uma mensagem.'; return; }
+    if (alertasAtrasoUsers.length === 0) { status.textContent = 'Nenhum colaborador para notificar.'; return; }
+
+    status.textContent = 'Enviando...';
+    let enviados = 0;
+
+    for (const u of alertasAtrasoUsers) {
+      const canal = canalDireto(currentUser.id, u.user_id);
+      const { error } = await sb.from('mensagens').insert({
+        user_id:    currentUser.id,
+        nome:       perfil.nome,
+        tipo:       'direto',
+        destino:    canal,
+        texto:      texto
+      });
+      if (!error) enviados++;
+    }
+
+    status.textContent = `✓ Mensagem enviada para ${enviados} colaborador(es).`;
+    document.getElementById('notificar-atraso-texto').value = '';
+    setTimeout(() => {
+      document.getElementById('notificar-atraso-box').style.display = 'none';
+      status.textContent = '';
+    }, 3000);
+  }
   async function renderAlertasAtraso() {
     const card = document.getElementById('alertas-atraso');
     if (!isAdmin) { card.style.display = 'none'; return; }
@@ -2410,6 +2554,13 @@
     if (alertas.length === 0) { card.style.display = 'none'; return; }
 
     alertas.sort((a, b) => b.dias - a.dias);
+
+    // Busca user_ids para envio de mensagens
+    const { data: perfisAtraso } = await sb.from('profiles').select('id,nome').in('nome', colaboradores);
+    const mapaIds = {};
+    (perfisAtraso || []).forEach(p => { mapaIds[p.nome] = p.id; });
+    alertasAtrasoUsers = alertas.filter(a => mapaIds[a.nome]).map(a => ({ user_id: mapaIds[a.nome], nome: a.nome }));
+
 
     document.getElementById('alertas-atraso-total').textContent =
       alertas.length + ' colaborador(es) com atraso';

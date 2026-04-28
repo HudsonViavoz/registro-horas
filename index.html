@@ -645,6 +645,15 @@
     }
     .btn-checkin:hover { border-color: var(--accent); color: var(--text); background: rgba(240,165,0,0.08); }
 
+    .btn-cat-obra {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 6px; color: var(--muted);
+      font-size: 11px; padding: 4px 10px; cursor: pointer;
+      font-family: var(--font); transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-cat-obra:hover { border-color: var(--accent); color: var(--text); }
+    .btn-cat-obra.ativo { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
     .btn-acao-obra {
       background: none; border: none; color: var(--muted);
       cursor: pointer; font-size: 13px; padding: 3px 6px;
@@ -1251,27 +1260,41 @@
 
     <!-- PAINEL: OBRAS (admin) -->
     <div id="panel-obras-admin" class="panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <span style="font-size:13px;font-weight:600;color:var(--text);">Obras cadastradas</span>
-        <button class="btn-add" style="font-size:12px;height:34px;" onclick="abrirModalNovaObra()">+ Nova Obra</button>
-      </div>
-      <!-- Busca -->
-      <div style="margin-bottom:10px;">
+
+      <!-- Categorias (botões de filtro) -->
+      <div id="obras-categorias" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+
+      <!-- Barra de ações -->
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
         <input type="text" id="busca-obras-admin" placeholder="Buscar obra..."
           oninput="filtrarObrasAdmin()"
-          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;" />
+        <button class="btn-add" style="font-size:12px;height:36px;white-space:nowrap;" onclick="abrirModalNovaObra()">+ Nova Obra</button>
       </div>
+
       <!-- Modal nova/editar obra -->
       <div id="modal-nova-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
-            style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
-            onkeydown="if(event.key==='Enter')salvarObraModal()" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div class="field">
+            <label>Categoria</label>
+            <select id="sel-cat-modal" class="field-select">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nome da Obra</label>
+            <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;"
+              onkeydown="if(event.key==='Enter')salvarObraModal()" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
           <button class="btn-add" style="height:34px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
           <button class="btn-filter" style="height:34px;" onclick="fecharModalObra()">Cancelar</button>
         </div>
         <div id="obra-modal-erro" style="font-size:11px;color:var(--danger);margin-top:5px;"></div>
       </div>
+
       <div id="grid-obras-admin"></div>
     </div>
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
@@ -1496,6 +1519,16 @@
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // Captura erros JS silenciosos e mostra a tela de login
+  window.addEventListener('error', function(e) {
+    console.error('Erro JS:', e.message, 'linha:', e.lineno);
+    const loading = document.getElementById('overlay-loading');
+    if (loading && !loading.classList.contains('oculto')) {
+      loading.classList.add('oculto');
+      mostrarAuth();
+    }
+  });
+
   // ═══════════════════════════════════════════════════
   // ESTADO GLOBAL
   // ═══════════════════════════════════════════════════
@@ -1569,6 +1602,7 @@
         document.getElementById('followup-card').style.display = 'none';
       });
       carregarObrasDB();
+      carregarCategoriasDB();
       document.getElementById('followup-card').style.display  = 'none';
       document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
@@ -1598,7 +1632,7 @@
         this.setAttribute('readonly','');
       });
       cronoRestaurar();
-      carregarObrasDB();
+      setTimeout(() => { carregarObrasDB(); carregarCategoriasDB(); }, 500);
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -2434,16 +2468,63 @@
     if (isAdmin) renderPainelObras();
   }
 
+  let CATEGORIAS_OBRAS = [];
+  let obrasCatFiltro   = '';
+
+  // ── Carrega categorias do banco ──────────────────────
+  async function carregarCategoriasDB() {
+    const { data } = await sb.from('categorias_obras').select('*').order('nome');
+    CATEGORIAS_OBRAS = (data || []);
+    atualizarSelectCategorias();
+  }
+
+  function atualizarSelectCategorias() {
+    const sel = document.getElementById('sel-cat-modal');
+    if (!sel) return;
+    const valAtual = sel.value;
+    sel.innerHTML = '<option value="">Selecione...</option>'
+      + CATEGORIAS_OBRAS.map(c => `<option value="${escapeHTML(c.nome)}">${escapeHTML(c.nome)}</option>`).join('')
+      + '<option value="__NOVA__">+ Nova categoria...</option>';
+    sel.value = valAtual;
+  }
+
   function renderPainelObras() {
     const grid = document.getElementById('grid-obras-admin');
     if (!grid) return;
 
-    // Limpa busca ao renderizar
     const busca = document.getElementById('busca-obras-admin');
     if (busca) busca.value = '';
 
-    if (obrasCacheAll.length === 0) {
-      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma obra cadastrada.</div>';
+    // Botões de categoria
+    const catDiv = document.getElementById('obras-categorias');
+    if (catDiv) {
+      catDiv.innerHTML = `
+        <button class="btn-cat-obra ${obrasCatFiltro === '' ? 'ativo' : ''}" onclick="filtrarCatObra('')">Todas</button>
+        ${CATEGORIAS_OBRAS.map(c =>
+          `<button class="btn-cat-obra ${obrasCatFiltro === c.nome ? 'ativo' : ''}"
+            onclick="filtrarCatObra('${escapeHTML(c.nome).replace(/'/g,"\\'")}')">
+            ${escapeHTML(c.nome)}
+          </button>`
+        ).join('')}
+        <button class="btn-cat-obra" onclick="abrirGerenciarCategorias()" title="Gerenciar categorias" style="border-style:dashed;">⚙ Categorias</button>`;
+    }
+
+    renderGridObras();
+  }
+
+  function renderGridObras() {
+    const grid = document.getElementById('grid-obras-admin');
+    const termo = (document.getElementById('busca-obras-admin')?.value || '').trim().toLowerCase();
+
+    let filtradas = obrasCacheAll.filter(o => {
+      const catOk  = !obrasCatFiltro || o.categoria === obrasCatFiltro;
+      const busOk  = !termo || o.nome.toLowerCase().includes(termo);
+      return catOk && busOk;
+    });
+
+    if (filtradas.length === 0) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma obra encontrada.</div>';
+      grid.style.cssText = '';
       return;
     }
 
@@ -2451,18 +2532,21 @@
     grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     grid.style.gap = '6px';
 
-    grid.innerHTML = obrasCacheAll.map(o => `
+    grid.innerHTML = filtradas.map(o => `
       <div class="obra-admin-card" data-nome="${escapeHTML(o.nome).toLowerCase()}"
         style="display:flex;align-items:center;justify-content:space-between;
         background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
         padding:8px 10px;opacity:${o.oculto ? '0.5' : '1'};">
-        <span style="font-size:13px;color:${o.oculto ? 'var(--muted)' : 'var(--text)'};
-          flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHTML(o.nome)}">
-          🏗 ${escapeHTML(o.nome)}
-          ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
-        </span>
+        <div style="flex:1;overflow:hidden;">
+          <div style="font-size:13px;color:${o.oculto ? 'var(--muted)' : 'var(--text)'};
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHTML(o.nome)}">
+            🏗 ${escapeHTML(o.nome)}
+            ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
+          </div>
+          ${o.categoria ? `<div style="font-size:10px;color:var(--muted);margin-top:1px;">${escapeHTML(o.categoria)}</div>` : ''}
+        </div>
         <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
-          <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}' )"
+          <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}','${(o.categoria||'').replace(/'/g,"\\'")}' )"
             class="btn-acao-obra" title="Editar">✎</button>
           <button onclick="ocultarObraAdmin('${o.id}',${o.oculto})"
             class="btn-acao-obra" title="${o.oculto ? 'Mostrar' : 'Ocultar'}">${o.oculto ? '👁' : '🚫'}</button>
@@ -2472,19 +2556,22 @@
       </div>`).join('');
   }
 
+  function filtrarCatObra(cat) {
+    obrasCatFiltro = cat;
+    renderPainelObras();
+  }
+
   function filtrarObrasAdmin() {
-    const termo = document.getElementById('busca-obras-admin').value.trim().toLowerCase();
-    document.querySelectorAll('#grid-obras-admin .obra-admin-card').forEach(card => {
-      card.style.display = !termo || card.dataset.nome.includes(termo) ? '' : 'none';
-    });
+    renderGridObras();
   }
 
   function abrirModalNovaObra() {
     obraEditandoId = null;
     document.getElementById('inp-obra-modal').value = '';
+    document.getElementById('sel-cat-modal').value  = '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
-    setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
+    setTimeout(() => document.getElementById('sel-cat-modal').focus(), 100);
   }
 
   function fecharModalObra() {
@@ -2492,26 +2579,30 @@
     obraEditandoId = null;
   }
 
-  function editarObraAdmin(id, nome) {
+  function editarObraAdmin(id, nome, categoria) {
     obraEditandoId = id;
     document.getElementById('inp-obra-modal').value = nome;
+    document.getElementById('sel-cat-modal').value  = categoria || '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
     setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
   }
 
   async function salvarObraModal() {
-    const input = document.getElementById('inp-obra-modal');
-    const nome  = input.value.trim().toUpperCase()
+    const input     = document.getElementById('inp-obra-modal');
+    const selCat    = document.getElementById('sel-cat-modal');
+    let   categoria = selCat.value;
+    const nome      = input.value.trim().toUpperCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const erro  = document.getElementById('obra-modal-erro');
-    if (!nome) { erro.textContent = 'Digite o nome da obra.'; return; }
+    const erro      = document.getElementById('obra-modal-erro');
+    if (!nome)      { erro.textContent = 'Digite o nome da obra.'; return; }
+    if (!categoria || categoria === '__NOVA__') { erro.textContent = 'Selecione uma categoria.'; return; }
 
     let error;
     if (obraEditandoId) {
-      ({ error } = await sb.from('obras').update({ nome }).eq('id', obraEditandoId));
+      ({ error } = await sb.from('obras').update({ nome, categoria }).eq('id', obraEditandoId));
     } else {
-      ({ error } = await sb.from('obras').insert({ nome }));
+      ({ error } = await sb.from('obras').insert({ nome, categoria }));
     }
 
     if (error) {
@@ -2522,6 +2613,99 @@
     fecharModalObra();
     mostrarToast(obraEditandoId ? 'Obra atualizada!' : 'Obra cadastrada!');
     await carregarObrasDB();
+  }
+
+  // Listener de categoria via delegação (o select pode não existir no carregamento)
+  document.addEventListener('change', function(e) {
+    if (e.target.id !== 'sel-cat-modal') return;
+    if (e.target.value !== '__NOVA__') return;
+    e.target.value = '';
+    abrirGerenciarCategorias();
+  });
+
+  // ── GERENCIAR CATEGORIAS ─────────────────────────────
+  function abrirGerenciarCategorias() {
+    // Cria modal se não existir
+    let modal = document.getElementById('modal-gerenciar-cats');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modal-gerenciar-cats';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;width:420px;max-width:95vw;max-height:80vh;overflow-y:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-size:14px;font-weight:700;color:var(--text);">⚙ Gerenciar Categorias</span>
+            <button onclick="fecharGerenciarCategorias()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">✕</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="inp-nova-cat" placeholder="NOVA CATEGORIA"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
+              onkeydown="if(event.key==='Enter')salvarCategoria()" />
+            <button class="btn-add" style="height:34px;font-size:12px;" onclick="salvarCategoria()">+ Adicionar</button>
+          </div>
+          <div id="lista-cats-modal"></div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    renderListaCatsModal();
+    setTimeout(() => document.getElementById('inp-nova-cat').focus(), 100);
+  }
+
+  function fecharGerenciarCategorias() {
+    const modal = document.getElementById('modal-gerenciar-cats');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function renderListaCatsModal() {
+    const lista = document.getElementById('lista-cats-modal');
+    if (!lista) return;
+    lista.innerHTML = CATEGORIAS_OBRAS.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        background:var(--bg3);border-radius:var(--radius);padding:7px 12px;margin-bottom:5px;">
+        <span id="cat-texto-${c.id}" style="font-size:13px;color:var(--text);flex:1;">${escapeHTML(c.nome)}</span>
+        <div style="display:flex;gap:4px;">
+          <button onclick="editarCategoriaInline('${c.id}')" class="btn-acao-obra" title="Editar">✎</button>
+          <button onclick="excluirCategoria('${c.id}','${escapeHTML(c.nome).replace(/'/g,"\\'")}' )" class="btn-acao-obra" title="Excluir">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function salvarCategoria() {
+    const input = document.getElementById('inp-nova-cat');
+    const nome  = input.value.trim().toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (!nome) return;
+    const { error } = await sb.from('categorias_obras').insert({ nome });
+    if (error) { mostrarToast(error.code === '23505' ? 'Categoria já existe.' : 'Erro ao salvar.','erro'); return; }
+    input.value = '';
+    mostrarToast('Categoria adicionada!');
+    await carregarCategoriasDB();
+    renderListaCatsModal();
+    renderPainelObras();
+  }
+
+  async function editarCategoriaInline(id) {
+    const cat   = CATEGORIAS_OBRAS.find(c => c.id === id);
+    if (!cat) return;
+    const novo  = prompt('Editar categoria:', cat.nome);
+    if (!novo || !novo.trim()) return;
+    const nome  = novo.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const { error } = await sb.from('categorias_obras').update({ nome }).eq('id', id);
+    if (error) { mostrarToast('Erro ao editar.','erro'); return; }
+    mostrarToast('Categoria atualizada!');
+    await carregarCategoriasDB();
+    renderListaCatsModal();
+    renderPainelObras();
+  }
+
+  async function excluirCategoria(id, nome) {
+    if (!confirm(`Excluir a categoria "${nome}"?\nAs obras desta categoria não serão apagadas.`)) return;
+    await sb.from('categorias_obras').delete().eq('id', id);
+    mostrarToast('Categoria excluída.');
+    await carregarCategoriasDB();
+    renderListaCatsModal();
+    renderPainelObras();
   }
 
   async function ocultarObraAdmin(id, atualOculto) {

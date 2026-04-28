@@ -1078,6 +1078,7 @@
             <option>PAISAGISMO</option>
             <option>PAVIMENTAÇÃO</option>
             <option>REURB</option>
+            <option>REUNIAO</option>
             <option>SANEAMENTO</option>
             <option>SANEAMENTO COPASA</option>
             <option>SINALIZAÇÃO</option>
@@ -1261,9 +1262,6 @@
     <!-- PAINEL: OBRAS (admin) -->
     <div id="panel-obras-admin" class="panel">
 
-      <!-- Categorias (botões de filtro) -->
-      <div id="obras-categorias" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
-
       <!-- Barra de ações -->
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <input type="text" id="busca-obras-admin" placeholder="Buscar obra..."
@@ -1274,23 +1272,12 @@
 
       <!-- Modal nova/editar obra -->
       <div id="modal-nova-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div class="field">
-            <label>Categoria</label>
-            <select id="sel-cat-modal" class="field-select">
-              <option value="">Selecione...</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Nome da Obra</label>
-            <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
-              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;"
-              onkeydown="if(event.key==='Enter')salvarObraModal()" />
-          </div>
-        </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn-add" style="height:34px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
-          <button class="btn-filter" style="height:34px;" onclick="fecharModalObra()">Cancelar</button>
+          <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
+            style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')salvarObraModal()" />
+          <button class="btn-add" style="height:36px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
+          <button class="btn-filter" style="height:36px;" onclick="fecharModalObra()">Cancelar</button>
         </div>
         <div id="obra-modal-erro" style="font-size:11px;color:var(--danger);margin-top:5px;"></div>
       </div>
@@ -2142,7 +2129,7 @@
         </tr>`).join('');
     }
 
-    const totalDec = lista.reduce((s, r) => s + r.horas, 0);
+    const totalDec = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     document.getElementById('footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
     document.getElementById('footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
   }
@@ -2199,9 +2186,7 @@
       .filter(r => r.colaborador === nomeColab)
       .sort((a, b) => a.data < b.data ? 1 : -1);
 
-    const totalG = lista.reduce((s, r) => s + r.horas, 0);
-
-    const tbody = document.getElementById('detalhe-colab-body');
+    const totalG = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     tbody.innerHTML = lista.map(r => `
       <tr>
         <td>${formatarData(r.data)}</td>
@@ -2276,10 +2261,8 @@
       .filter(r => r.obra === nomeObra)
       .sort((a, b) => a.data < b.data ? 1 : -1);
 
-    const totalG = lista.reduce((s, r) => s + r.horas, 0);
+    const totalG = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     const colabs = new Set(lista.map(r => r.colaborador)).size;
-
-    const tbody = document.getElementById('detalhe-obra-body');
     tbody.innerHTML = lista.map(r => `
       <tr>
         <td>${formatarData(r.data)}</td>
@@ -2349,7 +2332,7 @@
             <td style="color:var(--muted)">${r.obs ? escapeHTML(r.obs) : '—'}</td>
           </tr>`).join('');
 
-    const totalDec = lista.reduce((s, r) => s + r.horas, 0);
+    const totalDec = lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     document.getElementById('adm-footer-qtd').textContent   = lista.length > 0 ? lista.length : '—';
     document.getElementById('adm-footer-total').textContent = lista.length > 0 ? decimalParaHora(totalDec) : '—';
   }
@@ -2505,8 +2488,7 @@
             onclick="filtrarCatObra('${escapeHTML(c.nome).replace(/'/g,"\\'")}')">
             ${escapeHTML(c.nome)}
           </button>`
-        ).join('')}
-        <button class="btn-cat-obra" onclick="abrirGerenciarCategorias()" title="Gerenciar categorias" style="border-style:dashed;">⚙ Categorias</button>`;
+        ).join('')}`;
     }
 
     renderGridObras();
@@ -2568,10 +2550,9 @@
   function abrirModalNovaObra() {
     obraEditandoId = null;
     document.getElementById('inp-obra-modal').value = '';
-    document.getElementById('sel-cat-modal').value  = '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
-    setTimeout(() => document.getElementById('sel-cat-modal').focus(), 100);
+    setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
   }
 
   function fecharModalObra() {
@@ -2582,36 +2563,43 @@
   function editarObraAdmin(id, nome, categoria) {
     obraEditandoId = id;
     document.getElementById('inp-obra-modal').value = nome;
-    document.getElementById('sel-cat-modal').value  = categoria || '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
     setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
   }
 
   async function salvarObraModal() {
-    const input     = document.getElementById('inp-obra-modal');
-    const selCat    = document.getElementById('sel-cat-modal');
-    let   categoria = selCat.value;
-    const nome      = input.value.trim().toUpperCase()
+    const input = document.getElementById('inp-obra-modal');
+    const nome  = input.value.trim().toUpperCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const erro      = document.getElementById('obra-modal-erro');
-    if (!nome)      { erro.textContent = 'Digite o nome da obra.'; return; }
-    if (!categoria || categoria === '__NOVA__') { erro.textContent = 'Selecione uma categoria.'; return; }
+    const erro  = document.getElementById('obra-modal-erro');
+    if (!nome) { erro.textContent = 'Digite o nome da obra.'; return; }
 
-    let error;
     if (obraEditandoId) {
-      ({ error } = await sb.from('obras').update({ nome, categoria }).eq('id', obraEditandoId));
-    } else {
-      ({ error } = await sb.from('obras').insert({ nome, categoria }));
-    }
+      // Pega o nome atual antes de alterar
+      const obraAtual = obrasCacheAll.find(o => o.id === obraEditandoId);
+      const nomeAntigo = obraAtual ? obraAtual.nome : null;
 
-    if (error) {
-      erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
-      return;
+      const { error } = await sb.from('obras').update({ nome }).eq('id', obraEditandoId);
+      if (error) {
+        erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
+        return;
+      }
+
+      // Atualiza todos os registros com o nome antigo para o novo
+      if (nomeAntigo && nomeAntigo !== nome) {
+        await sb.from('registros').update({ obra: nome }).eq('obra', nomeAntigo);
+      }
+    } else {
+      const { error } = await sb.from('obras').insert({ nome });
+      if (error) {
+        erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
+        return;
+      }
     }
 
     fecharModalObra();
-    mostrarToast(obraEditandoId ? 'Obra atualizada!' : 'Obra cadastrada!');
+    mostrarToast(obraEditandoId ? 'Obra e registros atualizados!' : 'Obra cadastrada!');
     await carregarObrasDB();
   }
 

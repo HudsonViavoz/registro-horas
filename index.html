@@ -645,6 +645,13 @@
     }
     .btn-checkin:hover { border-color: var(--accent); color: var(--text); background: rgba(240,165,0,0.08); }
 
+    .btn-acao-obra {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 3px 6px;
+      border-radius: 4px; transition: background 0.15s, color 0.15s;
+    }
+    .btn-acao-obra:hover { background: var(--bg2); color: var(--text); }
+
     .card-especial {
       opacity: 0.7;
       border-left: 3px solid var(--muted) !important;
@@ -1097,6 +1104,7 @@
       <div class="tab active" onclick="trocarAba('registros', this)">Todos os Registros</div>
       <div class="tab" onclick="trocarAba('por-colaborador', this)">Por Colaborador</div>
       <div class="tab" onclick="trocarAba('por-obra', this)">Por Obra</div>
+      <div class="tab" id="tab-obras-admin" style="display:none;" onclick="trocarAba('obras-admin', this)">Obras</div>
       <!-- aba admin inserida dinamicamente -->
     </div>
 
@@ -1241,6 +1249,31 @@
       </div>
     </div>
 
+    <!-- PAINEL: OBRAS (admin) -->
+    <div id="panel-obras-admin" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <span style="font-size:13px;font-weight:600;color:var(--text);">Obras cadastradas</span>
+        <button class="btn-add" style="font-size:12px;height:34px;" onclick="abrirModalNovaObra()">+ Nova Obra</button>
+      </div>
+      <!-- Busca -->
+      <div style="margin-bottom:10px;">
+        <input type="text" id="busca-obras-admin" placeholder="Buscar obra..."
+          oninput="filtrarObrasAdmin()"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+      </div>
+      <!-- Modal nova/editar obra -->
+      <div id="modal-nova-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
+            style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
+            onkeydown="if(event.key==='Enter')salvarObraModal()" />
+          <button class="btn-add" style="height:34px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
+          <button class="btn-filter" style="height:34px;" onclick="fecharModalObra()">Cancelar</button>
+        </div>
+        <div id="obra-modal-erro" style="font-size:11px;color:var(--danger);margin-top:5px;"></div>
+      </div>
+      <div id="grid-obras-admin"></div>
+    </div>
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
     <div id="panel-admin" class="panel">
 
@@ -1506,9 +1539,11 @@
       document.getElementById('reunioes-card').style.display  = '';
       document.getElementById('banner-perfil').classList.add('oculto');
       document.getElementById('badge-admin').style.display    = 'inline';
-      // Mostra botão de cadastro de obras só para admin
+      // Mostra aba Obras e botão de cadastro só para admin
       const btnCadObras = document.getElementById('btn-cadastrar-obras');
       if (btnCadObras) btnCadObras.style.display = '';
+      const tabObrasAdmin = document.getElementById('tab-obras-admin');
+      if (tabObrasAdmin) tabObrasAdmin.style.display = '';
       // Esconde só a aba "Todos os Registros" para o admin
       document.querySelectorAll('#tabs-bar .tab').forEach(t => {
         if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'registros'")) {
@@ -1547,6 +1582,21 @@
       renderTudo();
       if (!perfil.nome) abrirPainelDados();
       document.getElementById('cronometro-widget').style.display = 'flex';
+      // Campo obra: colaborador só escolhe da lista (não digita livremente)
+      const inpObra = document.getElementById('inp-obra');
+      inpObra.removeAttribute('list');
+      inpObra.setAttribute('list', 'list-obra');
+      inpObra.setAttribute('readonly', '');
+      inpObra.style.cursor = 'pointer';
+      inpObra.addEventListener('click', function() { this.removeAttribute('readonly'); this.focus(); });
+      inpObra.addEventListener('blur', function() {
+        const valNorm = this.value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        // Aceita se estiver na lista ou for obra especial
+        const valido = obrasCache.includes(valNorm) || ['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE'].includes(valNorm);
+        if (!valido && this.value.trim()) { this.value = ''; mostrarToast('Selecione uma obra da lista.','info'); }
+        else if (this.value.trim()) { this.value = valNorm; }
+        this.setAttribute('readonly','');
+      });
       cronoRestaurar();
       carregarObrasDB();
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
@@ -2233,6 +2283,7 @@
     }
     if (id === 'admin')            renderAdmin();
     if (id === 'por-obra')         renderPorObra();
+    if (id === 'obras-admin')      renderPainelObras();
     if (id === 'por-colaborador')  renderPorColaborador();
   }
 
@@ -2366,69 +2417,132 @@
   }
 
   // ─── CADASTRO DE OBRAS (ADMIN) ──────────────────────
-  let obrasCache = [];
+  let obrasCache    = [];  // obras ativas e visíveis (para colaborador)
+  let obrasCacheAll = [];  // todas as obras (para admin)
+  let obraEditandoId = null;
 
   async function carregarObrasDB() {
-    const { data } = await sb.from('obras').select('nome').eq('ativo', true).order('nome');
-    obrasCache = (data || []).map(o => o.nome);
-    // Atualiza o datalist do campo de obra no formulário
+    const { data } = await sb.from('obras').select('*').eq('ativo', true).order('nome');
+    obrasCacheAll = data || [];
+    obrasCache    = obrasCacheAll.filter(o => !o.oculto).map(o => o.nome);
+
+    // Atualiza datalist do campo de obra
     const dl = document.getElementById('list-obra');
     if (dl) dl.innerHTML = obrasCache.map(n => `<option value="${escapeHTML(n)}">`).join('');
+
+    // Se admin, renderiza o painel de obras
+    if (isAdmin) renderPainelObras();
   }
 
-  function abrirCadastroObras() {
-    const modal = document.getElementById('modal-obras');
-    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
-    if (modal.style.display === 'block') {
-      renderListaObrasAdmin();
-      setTimeout(() => document.getElementById('inp-nova-obra').focus(), 100);
-    }
-  }
+  function renderPainelObras() {
+    const grid = document.getElementById('grid-obras-admin');
+    if (!grid) return;
 
-  function fecharCadastroObras() {
-    document.getElementById('modal-obras').style.display = 'none';
-  }
+    // Limpa busca ao renderizar
+    const busca = document.getElementById('busca-obras-admin');
+    if (busca) busca.value = '';
 
-  function renderListaObrasAdmin() {
-    const lista = document.getElementById('lista-obras-admin');
-    lista.innerHTML = obrasCache.length === 0
-      ? '<div style="font-size:12px;color:var(--muted);padding:4px;">Nenhuma obra cadastrada.</div>'
-      : obrasCache.map(n => `
-          <div style="display:flex;align-items:center;justify-content:space-between;
-            background:var(--bg3);border-radius:var(--radius);padding:6px 10px;">
-            <span style="font-size:13px;color:var(--text);">🏗 ${escapeHTML(n)}</span>
-            <button onclick="removerObraDB('${escapeHTML(n).replace(/'/g,"\\'")}')"
-              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;"
-              title="Remover">✕</button>
-          </div>`).join('');
-  }
-
-  async function adicionarObra() {
-    const input = document.getElementById('inp-nova-obra');
-    const nome  = input.value.trim().toUpperCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (!nome) return;
-
-    const { error } = await sb.from('obras').insert({ nome });
-    if (error) {
-      if (error.code === '23505') mostrarToast('Obra já cadastrada.', 'info');
-      else mostrarToast('Erro ao cadastrar obra.', 'erro');
+    if (obrasCacheAll.length === 0) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma obra cadastrada.</div>';
       return;
     }
 
-    input.value = '';
-    mostrarToast('Obra cadastrada!');
-    await carregarObrasDB();
-    renderListaObrasAdmin();
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    grid.style.gap = '6px';
+
+    grid.innerHTML = obrasCacheAll.map(o => `
+      <div class="obra-admin-card" data-nome="${escapeHTML(o.nome).toLowerCase()}"
+        style="display:flex;align-items:center;justify-content:space-between;
+        background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
+        padding:8px 10px;opacity:${o.oculto ? '0.5' : '1'};">
+        <span style="font-size:13px;color:${o.oculto ? 'var(--muted)' : 'var(--text)'};
+          flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHTML(o.nome)}">
+          🏗 ${escapeHTML(o.nome)}
+          ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
+        </span>
+        <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
+          <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}' )"
+            class="btn-acao-obra" title="Editar">✎</button>
+          <button onclick="ocultarObraAdmin('${o.id}',${o.oculto})"
+            class="btn-acao-obra" title="${o.oculto ? 'Mostrar' : 'Ocultar'}">${o.oculto ? '👁' : '🚫'}</button>
+          <button onclick="excluirObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}' )"
+            class="btn-acao-obra" title="Excluir">🗑</button>
+        </div>
+      </div>`).join('');
   }
 
-  async function removerObraDB(nome) {
-    if (!confirm(`Remover a obra "${nome}"?`)) return;
-    await sb.from('obras').update({ ativo: false }).eq('nome', nome);
-    mostrarToast('Obra removida.');
-    await carregarObrasDB();
-    renderListaObrasAdmin();
+  function filtrarObrasAdmin() {
+    const termo = document.getElementById('busca-obras-admin').value.trim().toLowerCase();
+    document.querySelectorAll('#grid-obras-admin .obra-admin-card').forEach(card => {
+      card.style.display = !termo || card.dataset.nome.includes(termo) ? '' : 'none';
+    });
   }
+
+  function abrirModalNovaObra() {
+    obraEditandoId = null;
+    document.getElementById('inp-obra-modal').value = '';
+    document.getElementById('obra-modal-erro').textContent = '';
+    document.getElementById('modal-nova-obra').style.display = 'block';
+    setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
+  }
+
+  function fecharModalObra() {
+    document.getElementById('modal-nova-obra').style.display = 'none';
+    obraEditandoId = null;
+  }
+
+  function editarObraAdmin(id, nome) {
+    obraEditandoId = id;
+    document.getElementById('inp-obra-modal').value = nome;
+    document.getElementById('obra-modal-erro').textContent = '';
+    document.getElementById('modal-nova-obra').style.display = 'block';
+    setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
+  }
+
+  async function salvarObraModal() {
+    const input = document.getElementById('inp-obra-modal');
+    const nome  = input.value.trim().toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const erro  = document.getElementById('obra-modal-erro');
+    if (!nome) { erro.textContent = 'Digite o nome da obra.'; return; }
+
+    let error;
+    if (obraEditandoId) {
+      ({ error } = await sb.from('obras').update({ nome }).eq('id', obraEditandoId));
+    } else {
+      ({ error } = await sb.from('obras').insert({ nome }));
+    }
+
+    if (error) {
+      erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
+      return;
+    }
+
+    fecharModalObra();
+    mostrarToast(obraEditandoId ? 'Obra atualizada!' : 'Obra cadastrada!');
+    await carregarObrasDB();
+  }
+
+  async function ocultarObraAdmin(id, atualOculto) {
+    await sb.from('obras').update({ oculto: !atualOculto }).eq('id', id);
+    mostrarToast(!atualOculto ? 'Obra ocultada dos colaboradores.' : 'Obra visível novamente.');
+    await carregarObrasDB();
+  }
+
+  async function excluirObraAdmin(id, nome) {
+    if (!confirm(`Excluir a obra "${nome}"?`)) return;
+    await sb.from('obras').update({ ativo: false }).eq('id', id);
+    mostrarToast('Obra excluída.');
+    await carregarObrasDB();
+  }
+
+  // Antigas funções do modal inline (mantém compatibilidade)
+  function abrirCadastroObras() { trocarAba('obras-admin', document.getElementById('tab-obras-admin')); }
+  function fecharCadastroObras() {}
+  function adicionarObra() { salvarObraModal(); }
+  function removerObraDB(nome) { const o = obrasCacheAll.find(x=>x.nome===nome); if(o) excluirObraAdmin(o.id, nome); }
+  function renderListaObrasAdmin() { renderPainelObras(); }
 
   // ─── BUSCA NOS CARDS ────────────────────────────────
 

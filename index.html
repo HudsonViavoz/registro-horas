@@ -1218,8 +1218,8 @@
 
     <!-- PAINEL: POR OBRA -->
     <div id="panel-por-obra" class="panel">
-      <!-- Filtros de status -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+      <!-- Filtros de status (só para admin) -->
+      <div id="obra-status-filtros" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
         <button class="btn-status-obra ativo" onclick="filtrarStatusObra('TODAS',this)">Todas</button>
         <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🟢 Em andamento</button>
         <button class="btn-status-obra" onclick="filtrarStatusObra('PAUSADA',this)">🟡 Pausadas</button>
@@ -1596,9 +1596,11 @@
       document.getElementById('reunioes-card').style.display  = '';
       document.getElementById('banner-perfil').classList.add('oculto');
       document.getElementById('badge-admin').style.display    = 'inline';
-      // Mostra aba Obras e botão de cadastro só para admin
-      const btnCadObras = document.getElementById('btn-cadastrar-obras');
-      if (btnCadObras) btnCadObras.style.display = '';
+      // Mostra filtros de status de obras e botão de obras só para admin
+      const obraFiltros = document.getElementById('obra-status-filtros');
+      if (obraFiltros) obraFiltros.style.display = 'flex';
+      const btnCadObras2 = document.getElementById('btn-cadastrar-obras');
+      if (btnCadObras2) btnCadObras2.style.display = '';
       const tabObrasAdmin = document.getElementById('tab-obras-admin');
       if (tabObrasAdmin) tabObrasAdmin.style.display = '';
       // Esconde só a aba "Todos os Registros" para o admin
@@ -2322,15 +2324,18 @@
       if (OBRAS_ESPECIAIS.has(r.obra)) mapa[r.obra].especial = true;
     });
 
-    // Inclui obras cadastradas pelo admin (sem registros ainda)
-    obrasCacheAll.forEach(o => {
-      if (!mapa[o.nome] && !OBRAS_ESPECIAIS.has(o.nome)) {
-        mapa[o.nome] = { horas: 0, pessoas: new Set(), dias: new Set(), especial: false, semRegistros: true, obraId: o.id, status: o.status || 'EM ANDAMENTO' };
-      } else if (mapa[o.nome]) {
-        mapa[o.nome].obraId = o.id;
-        mapa[o.nome].status = o.status || 'EM ANDAMENTO';
-      }
-    });
+    // Admin: inclui obras cadastradas sem registros ainda
+    // Colaborador: só vê obras onde lançou registros
+    if (isAdmin) {
+      obrasCacheAll.forEach(o => {
+        if (!mapa[o.nome] && !OBRAS_ESPECIAIS.has(o.nome)) {
+          mapa[o.nome] = { horas: 0, pessoas: new Set(), dias: new Set(), especial: false, semRegistros: true, obraId: o.id, status: o.status || 'EM ANDAMENTO' };
+        } else if (mapa[o.nome]) {
+          mapa[o.nome].obraId = o.id;
+          mapa[o.nome].status = o.status || 'EM ANDAMENTO';
+        }
+      });
+    }
 
     // Separa normais e especiais
     let normais   = Object.entries(mapa).filter(([,v]) => !v.especial);

@@ -661,6 +661,14 @@
     }
     .btn-acao-obra:hover { background: var(--bg2); color: var(--text); }
 
+    .btn-copiar-campo {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 11px; padding: 0 4px;
+      border-radius: 4px; transition: color 0.15s;
+      font-family: var(--font);
+    }
+    .btn-copiar-campo:hover { color: var(--accent); }
+
     .card-sem-reg { opacity: 0.6; border-style: dashed; }
 
     .btn-status-obra {
@@ -1066,7 +1074,7 @@
           <span id="inp-horas-erro" style="display:none;font-size:11px;color:var(--danger);margin-top:3px;"></span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end;margin-top:10px;">
+      <div style="display:grid;grid-template-columns:0.7fr 1fr 1fr auto auto;gap:10px;align-items:end;margin-top:10px;">
         <div class="field">
           <label>Disciplina</label>
           <select id="inp-disciplina" class="field-select">
@@ -1098,6 +1106,13 @@
             <option>URBANISMO</option>
             <option>OUTRA</option>
           </select>
+        </div>
+        <div class="field">
+          <label>Tarefa</label>
+          <input type="text" id="inp-tarefa" placeholder="DESCRIÇÃO DA TAREFA"
+            style="text-transform:uppercase;"
+            autocomplete="off" list="list-tarefa" />
+          <datalist id="list-tarefa"></datalist>
         </div>
         <div class="field">
           <label>Observação</label>
@@ -1154,6 +1169,7 @@
             <th onclick="ordenarPor('setor')">Setor <span class="sort-icon" id="sort-setor"></span></th>
             <th onclick="ordenarPor('obra')">Obra / Projeto <span class="sort-icon" id="sort-obra"></span></th>
             <th onclick="ordenarPor('disciplina')">Disciplina <span class="sort-icon" id="sort-disciplina"></span></th>
+            <th onclick="ordenarPor('tarefa')">Tarefa <span class="sort-icon" id="sort-tarefa"></span></th>
             <th onclick="ordenarPor('horas')">Horas <span class="sort-icon" id="sort-horas"></span></th>
             <th>Observação</th>
             <th></th>
@@ -1199,6 +1215,7 @@
               <th>Setor</th>
               <th>Obra / Projeto</th>
               <th>Disciplina</th>
+              <th>Tarefa</th>
               <th>Horas</th>
               <th>Observação</th>
             </tr></thead>
@@ -1253,8 +1270,13 @@
       <div id="detalhe-obra" class="oculto">
         <div class="detalhe-header">
           <span class="detalhe-titulo" id="detalhe-obra-nome"></span>
-          <button class="detalhe-fechar" onclick="fecharDetalheObra()">✕ Fechar</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-filter" style="font-size:11px;height:30px;" onclick="toggleDadosObra()">📋 Exibir Dados</button>
+            <button class="detalhe-fechar" onclick="fecharDetalheObra()">✕ Fechar</button>
+          </div>
         </div>
+        <!-- Painel de dados da obra -->
+        <div id="painel-dados-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;margin-bottom:12px;"></div>
         <div class="table-wrap">
           <table>
             <thead><tr>
@@ -1262,6 +1284,7 @@
               <th>Colaborador</th>
               <th>Setor</th>
               <th>Disciplina</th>
+              <th>Tarefa</th>
               <th>Horas</th>
               <th>Observação</th>
             </tr></thead>
@@ -1291,13 +1314,140 @@
       </div>
 
       <!-- Modal nova/editar obra -->
-      <div id="modal-nova-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
-            style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;"
-            onkeydown="if(event.key==='Enter')salvarObraModal()" />
-          <button class="btn-add" style="height:36px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
-          <button class="btn-filter" style="height:36px;" onclick="fecharModalObra()">Cancelar</button>
+      <div id="modal-nova-obra" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <!-- Nome -->
+          <div class="field" style="grid-column:1/-1;">
+            <label>Nome da Obra</label>
+            <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
+          </div>
+          <!-- Status -->
+          <div class="field">
+            <label>Status</label>
+            <select id="inp-obra-status" class="field-select">
+              <option value="EM ANDAMENTO">🟢 Em andamento</option>
+              <option value="PAUSADA">🟡 Pausada</option>
+              <option value="CONCLUIDA">✅ Concluída</option>
+            </select>
+          </div>
+          <!-- Prioridade -->
+          <div class="field">
+            <label>Prioridade</label>
+            <select id="inp-obra-prioridade" class="field-select">
+              <option value="BAIXA">🔵 Baixa</option>
+              <option value="NORMAL" selected>⚪ Normal</option>
+              <option value="ALTA">🟠 Alta</option>
+              <option value="URGENTE">🔴 Urgente</option>
+            </select>
+          </div>
+          <!-- Responsáveis -->
+          <div class="field" style="grid-column:1/-1;position:relative;">
+            <label>Responsáveis <span style="font-size:10px;color:var(--muted);">(use @ para mencionar)</span></label>
+            <input type="text" id="inp-obra-responsaveis" placeholder="@colaborador..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+            <div id="obra-resp-autocomplete" style="display:none;position:absolute;bottom:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;box-shadow:0 -4px 12px rgba(0,0,0,0.3);z-index:20;max-height:140px;overflow-y:auto;"></div>
+          </div>
+          <!-- Datas -->
+          <div class="field">
+            <label>Data Início</label>
+            <input type="date" id="inp-obra-inicio"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label>Data Fim</label>
+            <input type="date" id="inp-obra-fim"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <!-- Dados Gerais -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Dados Gerais</div>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Área<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-area')">📋</button></label>
+            <input type="text" id="inp-obra-area" placeholder="0,00 m²"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Código do Projeto<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-codigo')">📋</button></label>
+            <input type="text" id="inp-obra-codigo" placeholder="Ex: PRJ-2026-001"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Sigla da Cidade<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-sigla')">📋</button></label>
+            <input type="text" id="inp-obra-sigla" placeholder="Ex: BH, SP, RJ..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Recurso Financeiro<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-recurso')">📋</button></label>
+            <input type="text" id="inp-obra-recurso" placeholder="Ex: Federal, Estadual..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Valor da Obra<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-valor')">📋</button></label>
+            <input type="text" id="inp-obra-valor" placeholder="R$ 0,00"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Responsáveis Técnicos<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-resp-tecnicos')">📋</button></label>
+            <input type="text" id="inp-obra-resp-tecnicos" placeholder="Nome dos responsáveis técnicos"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <!-- Informações do Cliente -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Informações do Cliente</div>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Endereço<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-endereco')">📋</button></label>
+            <input type="text" id="inp-obra-endereco" placeholder="Rua, número, cidade..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">CNPJ<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-cnpj')">📋</button></label>
+            <input type="text" id="inp-obra-cnpj" placeholder="00.000.000/0000-00"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Telefone<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-telefone')">📋</button></label>
+            <input type="text" id="inp-obra-telefone" placeholder="(00) 00000-0000"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">E-mail<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-email')">📋</button></label>
+            <input type="text" id="inp-obra-email" placeholder="cliente@email.com"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <!-- Informações do Contrato -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Informações do Contrato</div>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Detalhes do contrato <span style="font-size:10px;color:var(--muted);">(Enter para nova linha)</span><button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-contrato')">📋 Copiar</button></label>
+            <textarea id="inp-obra-contrato" placeholder="Ex: Contrato nº 001/2026&#10;Valor: R$ 150.000,00&#10;Escopo: Projeto elétrico completo..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;resize:vertical;min-height:90px;line-height:1.5;"></textarea>
+          </div>
+          <!-- Escopo -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Escopo</div>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Descrição do escopo <span style="font-size:10px;color:var(--muted);">(Enter para nova linha)</span><button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-escopo')">📋 Copiar</button></label>
+            <textarea id="inp-obra-escopo" placeholder="Descreva o escopo do projeto..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;resize:vertical;min-height:90px;line-height:1.5;"></textarea>
+          </div>
+          <!-- Histórico do Projeto -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Histórico do Projeto</div>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Histórico <span style="font-size:10px;color:var(--muted);">(Enter para nova linha)</span><button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-historico')">📋 Copiar</button></label>
+            <textarea id="inp-obra-historico" placeholder="Registre eventos, decisões e marcos do projeto..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;resize:vertical;min-height:90px;line-height:1.5;"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-add" style="height:34px;font-size:12px;" onclick="salvarObraModal()">Salvar</button>
+          <button class="btn-filter" style="height:34px;" onclick="fecharModalObra()">Cancelar</button>
         </div>
         <div id="obra-modal-erro" style="font-size:11px;color:var(--danger);margin-top:5px;"></div>
       </div>
@@ -1362,7 +1512,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Data</th><th>Colaborador</th><th>Setor</th><th>Obra / Projeto</th><th>Disciplina</th>
+            <th>Data</th><th>Colaborador</th><th>Setor</th><th>Obra / Projeto</th><th>Disciplina</th><th>Tarefa</th>
             <th>Horas</th><th>Observação</th>
           </tr></thead>
           <tbody id="admin-body"></tbody>
@@ -1640,6 +1790,7 @@
       document.querySelector('.tab').classList.add('active');
       document.getElementById('panel-registros').classList.add('active');
       renderTudo();
+      atualizarListaTarefas();
       if (!perfil.nome) abrirPainelDados();
       document.getElementById('cronometro-widget').style.display = 'flex';
       // Campo obra: colaborador só escolhe da lista (não digita livremente)
@@ -1967,6 +2118,7 @@
     const horaStr     = document.getElementById('inp-horas').value.trim();
     const obs         = document.getElementById('inp-obs').value.trim();
     const disciplina  = document.getElementById('inp-disciplina').value;
+    const tarefa      = document.getElementById('inp-tarefa').value.trim();
 
     if (!colaborador || !obra || !data || !horaStr) {
       mostrarToast('Preencha todos os campos obrigatórios.', 'erro'); return;
@@ -1983,7 +2135,8 @@
       colaborador, obra, data,
       horas, obs: obs || null,
       setor: perfil.setor || null,
-      disciplina: disciplina || null
+      disciplina: disciplina || null,
+      tarefa: tarefa || null
     };
     if (horaStr) payload.hora_str = horaStr;
 
@@ -2001,10 +2154,12 @@
     document.getElementById('inp-horas').value      = '';
     document.getElementById('inp-obs').value        = '';
     document.getElementById('inp-disciplina').value = '';
+    document.getElementById('inp-tarefa').value        = '';
     document.getElementById('inp-horas').style.borderColor = '';
 
     renderTudo();
     mostrarToast('Registro adicionado!');
+    atualizarListaTarefas();
     mostrarLoading(false);
   }
 
@@ -2033,6 +2188,7 @@
     const horaStr = document.getElementById('inp-horas').value.trim();
     const obs        = document.getElementById('inp-obs').value.trim();
     const disciplina = document.getElementById('inp-disciplina').value;
+    const tarefa     = document.getElementById('inp-tarefa').value.trim();
 
     if (!obra || !data || !horaStr) { mostrarToast('Preencha todos os campos.', 'erro'); return; }
     if (!horaValida(horaStr))       { mostrarToast('Hora inválida.', 'erro'); return; }
@@ -2041,13 +2197,13 @@
     mostrarLoading(true);
 
     const { error } = await sb.from('registros')
-      .update({ obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null })
+      .update({ obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null, tarefa: tarefa || null })
       .eq('id', editandoId);
 
     if (error) { mostrarToast('Erro ao atualizar.', 'erro'); mostrarLoading(false); return; }
 
     const idx = dados.findIndex(r => r.id === editandoId);
-    if (idx !== -1) dados[idx] = { ...dados[idx], obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null };
+    if (idx !== -1) dados[idx] = { ...dados[idx], obra, data, horas, hora_str: horaStr, obs, disciplina: disciplina || null, tarefa: tarefa || null };
 
     cancelarEdicao();
     renderTudo();
@@ -2173,6 +2329,7 @@
           <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
           <td>${escapeHTML(r.obra)}</td>
           <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+          <td style="color:var(--muted)">${r.tarefa ? escapeHTML(r.tarefa) : '—'}</td>
           <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
           <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
           <td style="text-align:right;white-space:nowrap;">
@@ -2276,6 +2433,7 @@
         <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
         <td>${escapeHTML(r.obra)}</td>
         <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+        <td style="color:var(--muted)">${r.tarefa ? escapeHTML(r.tarefa) : '—'}</td>
         <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
         <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
       </tr>`).join('');
@@ -2428,6 +2586,7 @@
         <td>${escapeHTML(r.colaborador)}</td>
         <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
         <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+        <td style="color:var(--muted)">${r.tarefa ? escapeHTML(r.tarefa) : '—'}</td>
         <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
         <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
       </tr>`).join('');
@@ -2438,6 +2597,76 @@
 
     document.getElementById('detalhe-obra').classList.remove('oculto');
     document.getElementById('detalhe-obra').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function toggleDadosObra() {
+    const painel = document.getElementById('painel-dados-obra');
+    const btn    = document.querySelector('#detalhe-obra .btn-filter');
+    if (painel.style.display === 'none') {
+      const nomeObra = document.getElementById('detalhe-obra-nome').textContent;
+      const o = obrasCacheAll.find(x => x.nome === nomeObra);
+      if (!o) { mostrarToast('Dados não encontrados para esta obra.', 'info'); return; }
+      renderDadosObra(o);
+      painel.style.display = 'block';
+      btn.textContent = '📋 Ocultar Dados';
+    } else {
+      painel.style.display = 'none';
+      btn.textContent = '📋 Exibir Dados';
+    }
+  }
+
+  function renderDadosObra(o) {
+    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
+
+    const secao = (titulo, campos) => {
+      const itens = campos.filter(([,v]) => v).map(([l,v]) => {
+        const isMultiline = String(v).includes('\n');
+        const valEsc = escapeHTML(String(v));
+        const copyBtn = `<button type="button" class="btn-copiar-campo" style="flex-shrink:0;"
+          onclick="copiarTexto(this)" data-texto="${valEsc}">📋</button>`;
+        if (isMultiline || !l) {
+          return `<div style="display:flex;gap:6px;margin-bottom:4px;align-items:flex-start;">
+            ${copyBtn}
+            <span style="font-size:12px;color:var(--text);white-space:pre-wrap;">${valEsc}</span>
+          </div>`;
+        }
+        return `<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;">
+          ${copyBtn}
+          <span style="font-size:12px;color:var(--muted);min-width:130px;flex-shrink:0;">${l}</span>
+          <span style="font-size:12px;color:var(--text);">${valEsc}</span>
+        </div>`;
+      }).join('');
+      if (!itens) return '';
+      return `<div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">▎ ${titulo}</div>
+        ${itens}
+      </div>`;
+    };
+
+    document.getElementById('painel-dados-obra').innerHTML =
+      secao('Dados Gerais', [
+        ['Status',               (statusIcon[o.status]||'') + ' ' + (o.status||'')],
+        ['Prioridade',           (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
+        ['Código do Projeto',    o.codigo_projeto],
+        ['Área',                 o.area],
+        ['Sigla da Cidade',      o.sigla_cidade],
+        ['Recurso Financeiro',   o.recurso_financeiro],
+        ['Valor da Obra',        o.valor_obra],
+        ['Responsáveis',         o.responsaveis],
+        ['Resp. Técnicos',       o.responsaveis_tecnicos],
+        ['Data Início',          o.data_inicio ? formatarData(o.data_inicio) : null],
+        ['Data Fim',             o.data_fim    ? formatarData(o.data_fim)    : null],
+      ]) +
+      secao('Informações do Cliente', [
+        ['Endereço',  o.cliente_endereco],
+        ['CNPJ',      o.cliente_cnpj],
+        ['Telefone',  o.cliente_telefone],
+        ['E-mail',    o.cliente_email],
+      ]) +
+      secao('Informações do Contrato', [['', o.contrato_info]]) +
+      secao('Escopo',                  [['', o.escopo]]) +
+      secao('Histórico do Projeto',    [['', o.historico]]);
   }
 
   function fecharDetalheObra() {
@@ -2494,7 +2723,7 @@
 
     const tbody = document.getElementById('admin-body');
     tbody.innerHTML = total === 0
-      ? `<tr><td colspan="7"><div class="empty"><strong>Sem registros</strong>Ajuste os filtros acima.</div></td></tr>`
+      ? `<tr><td colspan="8"><div class="empty"><strong>Sem registros</strong>Ajuste os filtros acima.</div></td></tr>`
       : pagina.map(r => `
           <tr>
             <td>${formatarData(r.data)}</td>
@@ -2502,6 +2731,7 @@
             <td style="color:var(--muted)">${r.setor ? escapeHTML(r.setor) : '—'}</td>
             <td>${escapeHTML(r.obra)}</td>
             <td style="color:var(--muted)">${r.disciplina ? escapeHTML(r.disciplina) : '—'}</td>
+            <td style="color:var(--muted)">${r.tarefa ? escapeHTML(r.tarefa) : '—'}</td>
             <td><span class="badge-horas">${r.hora_str || decimalParaHora(r.horas)}</span></td>
             <td style="color:var(--muted)">${r.obs ? escapeHTML(r.obs) : '—'}</td>
           </tr>`).join('');
@@ -2772,7 +3002,12 @@
             🏗 ${escapeHTML(o.nome)}
             ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
           </div>
-          ${o.categoria ? `<div style="font-size:10px;color:var(--muted);margin-top:1px;">${escapeHTML(o.categoria)}</div>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;">
+            ${o.status ? `<span style="font-size:10px;color:var(--muted);">${o.status==='EM ANDAMENTO'?'🟢':o.status==='PAUSADA'?'🟡':'✅'} ${o.status}</span>` : ''}
+            ${o.prioridade && o.prioridade!=='NORMAL' ? `<span style="font-size:10px;color:var(--muted);">${o.prioridade==='ALTA'?'🟠':o.prioridade==='URGENTE'?'🔴':'🔵'} ${o.prioridade}</span>` : ''}
+            ${o.data_inicio ? `<span style="font-size:10px;color:var(--muted);">📅 ${formatarData(o.data_inicio)}${o.data_fim?' → '+formatarData(o.data_fim):''}</span>` : ''}
+            ${o.responsaveis ? `<span style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;max-width:150px;white-space:nowrap;">👤 ${escapeHTML(o.responsaveis)}</span>` : ''}
+          </div>
         </div>
         <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
           <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}','${(o.categoria||'').replace(/'/g,"\\'")}' )"
@@ -2796,7 +3031,25 @@
 
   function abrirModalNovaObra() {
     obraEditandoId = null;
-    document.getElementById('inp-obra-modal').value = '';
+    document.getElementById('inp-obra-modal').value        = '';
+    document.getElementById('inp-obra-status').value       = 'EM ANDAMENTO';
+    document.getElementById('inp-obra-prioridade').value   = 'NORMAL';
+    document.getElementById('inp-obra-responsaveis').value = '';
+    document.getElementById('inp-obra-inicio').value       = '';
+    document.getElementById('inp-obra-fim').value          = '';
+    document.getElementById('inp-obra-endereco').value     = '';
+    document.getElementById('inp-obra-cnpj').value         = '';
+    document.getElementById('inp-obra-telefone').value     = '';
+    document.getElementById('inp-obra-email').value          = '';
+    document.getElementById('inp-obra-area').value           = '';
+    document.getElementById('inp-obra-codigo').value         = '';
+    document.getElementById('inp-obra-sigla').value          = '';
+    document.getElementById('inp-obra-recurso').value        = '';
+    document.getElementById('inp-obra-valor').value          = '';
+    document.getElementById('inp-obra-resp-tecnicos').value  = '';
+    document.getElementById('inp-obra-contrato').value       = '';
+    document.getElementById('inp-obra-escopo').value       = '';
+    document.getElementById('inp-obra-historico').value    = '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
     setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
@@ -2808,49 +3061,192 @@
   }
 
   function editarObraAdmin(id, nome, categoria) {
+    const o = obrasCacheAll.find(x => x.id === id);
     obraEditandoId = id;
-    document.getElementById('inp-obra-modal').value = nome;
+    document.getElementById('inp-obra-modal').value        = nome;
+    document.getElementById('inp-obra-status').value       = (o && o.status)           || 'EM ANDAMENTO';
+    document.getElementById('inp-obra-prioridade').value   = (o && o.prioridade)       || 'NORMAL';
+    document.getElementById('inp-obra-responsaveis').value = (o && o.responsaveis)     || '';
+    document.getElementById('inp-obra-inicio').value       = (o && o.data_inicio)      || '';
+    document.getElementById('inp-obra-fim').value          = (o && o.data_fim)         || '';
+    document.getElementById('inp-obra-endereco').value     = (o && o.cliente_endereco) || '';
+    document.getElementById('inp-obra-cnpj').value         = (o && o.cliente_cnpj)     || '';
+    document.getElementById('inp-obra-telefone').value     = (o && o.cliente_telefone) || '';
+    document.getElementById('inp-obra-email').value          = (o && o.cliente_email)         || '';
+    document.getElementById('inp-obra-area').value           = (o && o.area)                  || '';
+    document.getElementById('inp-obra-codigo').value         = (o && o.codigo_projeto)        || '';
+    document.getElementById('inp-obra-sigla').value          = (o && o.sigla_cidade)          || '';
+    document.getElementById('inp-obra-recurso').value        = (o && o.recurso_financeiro)    || '';
+    document.getElementById('inp-obra-valor').value          = (o && o.valor_obra)            || '';
+    document.getElementById('inp-obra-resp-tecnicos').value  = (o && o.responsaveis_tecnicos) || '';
+    document.getElementById('inp-obra-contrato').value       = (o && o.contrato_info)         || '';
+    document.getElementById('inp-obra-escopo').value       = (o && o.escopo)        || '';
+    document.getElementById('inp-obra-historico').value    = (o && o.historico)     || '';
     document.getElementById('obra-modal-erro').textContent = '';
     document.getElementById('modal-nova-obra').style.display = 'block';
     setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
   }
 
   async function salvarObraModal() {
-    const input = document.getElementById('inp-obra-modal');
-    const nome  = input.value.trim().toUpperCase()
+    const input       = document.getElementById('inp-obra-modal');
+    const nome        = input.value.trim().toUpperCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const erro  = document.getElementById('obra-modal-erro');
+    const status      = document.getElementById('inp-obra-status').value;
+    const prioridade  = document.getElementById('inp-obra-prioridade').value;
+    const responsaveis= document.getElementById('inp-obra-responsaveis').value.trim();
+    const data_inicio      = document.getElementById('inp-obra-inicio').value    || null;
+    const data_fim         = document.getElementById('inp-obra-fim').value        || null;
+    const cliente_endereco = document.getElementById('inp-obra-endereco').value.trim() || null;
+    const cliente_cnpj     = document.getElementById('inp-obra-cnpj').value.trim()     || null;
+    const cliente_telefone = document.getElementById('inp-obra-telefone').value.trim() || null;
+    const cliente_email         = document.getElementById('inp-obra-email').value.trim()         || null;
+    const area                  = document.getElementById('inp-obra-area').value.trim()          || null;
+    const codigo_projeto        = document.getElementById('inp-obra-codigo').value.trim()        || null;
+    const sigla_cidade          = document.getElementById('inp-obra-sigla').value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || null;
+    const recurso_financeiro    = document.getElementById('inp-obra-recurso').value.trim()       || null;
+    const valor_obra            = document.getElementById('inp-obra-valor').value.trim()         || null;
+    const responsaveis_tecnicos = document.getElementById('inp-obra-resp-tecnicos').value.trim() || null;
+    const contrato_info         = document.getElementById('inp-obra-contrato').value.trim()      || null;
+    const escopo           = document.getElementById('inp-obra-escopo').value.trim()    || null;
+    const historico        = document.getElementById('inp-obra-historico').value.trim() || null;
+    const oculto           = status === 'CONCLUIDA';
+    const erro             = document.getElementById('obra-modal-erro');
+
     if (!nome) { erro.textContent = 'Digite o nome da obra.'; return; }
 
+    const payload = { nome, status, prioridade, responsaveis: responsaveis || null,
+      data_inicio, data_fim, oculto,
+      cliente_endereco, cliente_cnpj, cliente_telefone, cliente_email,
+      area, codigo_projeto, sigla_cidade, recurso_financeiro, valor_obra, responsaveis_tecnicos,
+      contrato_info, escopo, historico };
+
+    let error;
     if (obraEditandoId) {
-      // Pega o nome atual antes de alterar
+      // Se editando nome, atualiza registros vinculados
       const obraAtual = obrasCacheAll.find(o => o.id === obraEditandoId);
       const nomeAntigo = obraAtual ? obraAtual.nome : null;
-
-      const { error } = await sb.from('obras').update({ nome }).eq('id', obraEditandoId);
-      if (error) {
-        erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
-        return;
-      }
-
-      // Atualiza todos os registros com o nome antigo para o novo
-      if (nomeAntigo && nomeAntigo !== nome) {
+      ({ error } = await sb.from('obras').update(payload).eq('id', obraEditandoId));
+      if (!error && nomeAntigo && nomeAntigo !== nome) {
         await sb.from('registros').update({ obra: nome }).eq('obra', nomeAntigo);
       }
     } else {
-      const { error } = await sb.from('obras').insert({ nome });
-      if (error) {
-        erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
-        return;
-      }
+      ({ error } = await sb.from('obras').insert(payload));
+    }
+
+    if (error) {
+      erro.textContent = error.code === '23505' ? 'Obra já cadastrada.' : 'Erro ao salvar.';
+      return;
     }
 
     fecharModalObra();
-    mostrarToast(obraEditandoId ? 'Obra e registros atualizados!' : 'Obra cadastrada!');
+    mostrarToast(obraEditandoId ? 'Obra atualizada!' : 'Obra cadastrada!');
     await carregarObrasDB();
   }
 
-  // Listener de categoria via delegação (o select pode não existir no carregamento)
+  // Autocomplete @menção no campo responsáveis
+  let obraRespAutoIdx = -1;
+  document.addEventListener('input', function(e) {
+    if (e.target.id !== 'inp-obra-responsaveis') return;
+    const val = e.target.value, pos = e.target.selectionStart;
+    const atPos = val.lastIndexOf('@', pos - 1);
+    const box = document.getElementById('obra-resp-autocomplete');
+    if (atPos === -1) { box.style.display = 'none'; return; }
+    const termo = val.slice(atPos + 1, pos).toLowerCase();
+    const filt  = todosPerfis.filter(p => p.nome && p.nome.toLowerCase().includes(termo));
+    if (!filt.length) { box.style.display = 'none'; return; }
+    obraRespAutoIdx = -1;
+    box.style.display = 'block';
+    box.innerHTML = filt.map(p =>
+      `<div class="chat-autocomplete-item" data-nome="${escapeHTML(p.nome)}" data-at="${atPos}"
+        onmousedown="selecionarObraResp(this)">${escapeHTML(p.nome)}</div>`
+    ).join('');
+  });
+
+  function selecionarObraResp(el) {
+    const nome = el.dataset.nome, atPos = parseInt(el.dataset.at);
+    const inp  = document.getElementById('inp-obra-responsaveis');
+    const pos  = inp.selectionStart;
+    inp.value  = inp.value.slice(0, atPos) + '@' + nome + ' ' + inp.value.slice(pos);
+    inp.focus();
+    document.getElementById('obra-resp-autocomplete').style.display = 'none';
+  }
+
+  document.addEventListener('blur', function(e) {
+    if (e.target.id === 'inp-obra-responsaveis')
+      setTimeout(() => { const b = document.getElementById('obra-resp-autocomplete'); if(b) b.style.display='none'; }, 150);
+  }, true);
+
+  // Máscara CNPJ — 00.000.000/0000-00
+  document.getElementById('inp-obra-cnpj').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'').slice(0,14);
+    if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/,'$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4}).*/,'$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3}).*/,'$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3}).*/,'$1.$2');
+    this.value = v;
+  });
+
+  // Máscara Telefone — (00) 00000-0000
+  document.getElementById('inp-obra-telefone').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'').slice(0,11);
+    if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3');
+    else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4}).*/,'($1) $2-$3');
+    else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5}).*/,'($1) $2');
+    else if (v.length > 0) v = v.replace(/^(\d{0,2}).*/,'($1');
+    this.value = v;
+  });
+  document.getElementById('inp-obra-area').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'');
+    if (!v) { this.value = ''; return; }
+    v = (parseInt(v) / 100).toFixed(2);
+    const [int, dec] = v.split('.');
+    const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    this.value = intFmt + ',' + dec + ' m²';
+    // Posiciona cursor antes do " m²"
+    const pos = this.value.length - 3;
+    this.setSelectionRange(pos, pos);
+  });
+  document.getElementById('inp-obra-area').addEventListener('keydown', function(e) {
+    // Impede digitar no sufixo " m²"
+    if (e.key === 'Backspace') {
+      const v = this.value.replace(/[^\d]/g,'');
+      if (v.length <= 1) { this.value = ''; e.preventDefault(); }
+    }
+  });
+
+  // Máscara para valor (R$) — ex: R$ 1.234.567,89
+  document.getElementById('inp-obra-valor').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'');
+    if (!v) { this.value = ''; return; }
+    v = (parseInt(v) / 100).toFixed(2);
+    const [int, dec] = v.split('.');
+    const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    this.value = 'R$ ' + intFmt + ',' + dec;
+    const pos = this.value.length;
+    this.setSelectionRange(pos, pos);
+  });
+  document.getElementById('inp-obra-valor').addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace') {
+      const v = this.value.replace(/[^\d]/g,'');
+      if (v.length <= 1) { this.value = ''; e.preventDefault(); }
+    }
+  });
+  function copiarCampo(id) {
+    const el = document.getElementById(id);
+    if (!el || !el.value.trim()) { mostrarToast('Campo vazio.', 'info'); return; }
+    navigator.clipboard.writeText(el.value.trim())
+      .then(() => mostrarToast('Copiado!'))
+      .catch(() => { el.select(); document.execCommand('copy'); mostrarToast('Copiado!'); });
+  }
+
+  function copiarTexto(btn) {
+    const texto = btn.getAttribute('data-texto') || '';
+    if (!texto.trim()) { mostrarToast('Campo vazio.', 'info'); return; }
+    navigator.clipboard.writeText(texto)
+      .then(() => mostrarToast('Copiado!'))
+      .catch(() => mostrarToast('Erro ao copiar.', 'erro'));
+  }
+
   document.addEventListener('change', function(e) {
     if (e.target.id !== 'sel-cat-modal') return;
     if (e.target.value !== '__NOVA__') return;
@@ -2962,6 +3358,13 @@
   function adicionarObra() { salvarObraModal(); }
   function removerObraDB(nome) { const o = obrasCacheAll.find(x=>x.nome===nome); if(o) excluirObraAdmin(o.id, nome); }
   function renderListaObrasAdmin() { renderPainelObras(); }
+
+  function atualizarListaTarefas() {
+    const dl = document.getElementById('list-tarefa');
+    if (!dl) return;
+    const tarefas = [...new Set(dados.map(r => r.tarefa).filter(Boolean))].sort();
+    dl.innerHTML = tarefas.map(t => `<option value="${escapeHTML(t)}">`).join('');
+  }
 
   // ─── BUSCA NOS CARDS ────────────────────────────────
 
@@ -3183,7 +3586,7 @@
   // EXPORTAÇÃO EXCEL (múltiplas abas por disciplina)
   // ═══════════════════════════════════════════════════
 
-  const CAB_EXCEL = ['Data','Colaborador','Setor','Obra / Projeto','Disciplina','Horas','Observação'];
+  const CAB_EXCEL = ['Data','Colaborador','Setor','Obra / Projeto','Disciplina','Tarefa','Horas','Observação'];
 
   // Converte lista de registros para linhas + linha de total no final
   function registrosParaLinhas(lista) {
@@ -3195,45 +3598,41 @@
         r.setor      || '',
         r.obra,
         r.disciplina || '',
-        r.horas / 24,   // Horas como fração de dia — Excel entende como tempo
+        r.tarefa     || '',
+        r.horas / 24,
         r.obs        || ''
       ]);
-
-    // Linha de total
     const totalDec = lista.reduce((s, r) => s + r.horas, 0);
-    linhas.push(['', '', '', '', 'TOTAL', totalDec / 24, '']);
-
+    linhas.push(['', '', '', '', 'TOTAL', '', totalDec / 24, '']);
     return linhas;
   }
 
-  // Aplica formato de hora [h]:mm em todas as células da coluna Horas (índice 5)
+  // Aplica formato de hora [h]:mm em todas as células da coluna Horas (índice 6)
+  // Aplica formato de hora [h]:mm na coluna Horas (índice 6)
   function aplicarFormatoHoras(ws, numLinhas) {
-    // numLinhas inclui cabeçalho (linha 1) + dados + total
-    for (let row = 1; row < numLinhas; row++) {  // row 0 = cabeçalho, pula
-      const cellAddr = XLSX.utils.encode_cell({ r: row, c: 5 });
-      if (ws[cellAddr]) {
-        ws[cellAddr].t = 'n';
-        ws[cellAddr].z = '[h]:mm';  // formato que suporta >24h e permite AutoSoma
-      }
+    for (let row = 1; row < numLinhas; row++) {
+      const cellAddr = XLSX.utils.encode_cell({ r: row, c: 6 });
+      if (ws[cellAddr]) { ws[cellAddr].t = 'n'; ws[cellAddr].z = '[h]:mm'; }
     }
+  }
+
+  function estilizarPlanilha(ws) {
+    ws['!cols'] = [
+      { wch: 12 }, { wch: 25 }, { wch: 18 }, { wch: 25 },
+      { wch: 22 }, { wch: 25 }, { wch: 10 }, { wch: 30 }
+    ];
   }
 
   // Gera arquivo Excel com aba "Tudo" + uma aba por disciplina
   function gerarExcel(lista, nomeArquivo) {
     if (!lista.length) { mostrarToast('Sem dados para exportar.', 'info'); return; }
-
     const wb = XLSX.utils.book_new();
-
-    // ── Aba 1: Tudo ──────────────────────────────────
     const linhasAll = registrosParaLinhas(lista);
     const wsAll     = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhasAll]);
     aplicarFormatoHoras(wsAll, linhasAll.length + 1);
     estilizarPlanilha(wsAll);
     XLSX.utils.book_append_sheet(wb, wsAll, 'Tudo');
-
-    // ── Abas por Disciplina ───────────────────────────
     const disciplinas = [...new Set(lista.map(r => r.disciplina || 'Sem disciplina'))].sort();
-
     disciplinas.forEach(disc => {
       const sub       = lista.filter(r => (r.disciplina || 'Sem disciplina') === disc);
       const linhasSub = registrosParaLinhas(sub);
@@ -3242,22 +3641,8 @@
       estilizarPlanilha(ws);
       XLSX.utils.book_append_sheet(wb, ws, disc.substring(0, 31));
     });
-
     XLSX.writeFile(wb, `${nomeArquivo}_${toLocalISO(new Date())}.xlsx`);
     mostrarToast('Excel exportado!');
-  }
-
-  // Ajusta larguras e destaca linha de total
-  function estilizarPlanilha(ws) {
-    ws['!cols'] = [
-      { wch: 12 }, // Data
-      { wch: 25 }, // Colaborador
-      { wch: 18 }, // Setor
-      { wch: 25 }, // Obra
-      { wch: 22 }, // Disciplina
-      { wch: 10 }, // Horas
-      { wch: 30 }, // Observação
-    ];
   }
 
   function exportarCSV() {
@@ -3408,6 +3793,12 @@
       this.value = this.value.toUpperCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     });
+  });
+
+  // Campo Tarefa: força maiúsculo e remove acentos
+  document.getElementById('inp-tarefa').addEventListener('blur', function() {
+    this.value = this.value.toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   });
 
   // ═══════════════════════════════════════════════════

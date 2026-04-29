@@ -661,6 +661,17 @@
     }
     .btn-acao-obra:hover { background: var(--bg2); color: var(--text); }
 
+    .card-sem-reg { opacity: 0.6; border-style: dashed; }
+
+    .btn-status-obra {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 6px; color: var(--muted);
+      font-size: 12px; padding: 5px 12px; cursor: pointer;
+      font-family: var(--font); transition: all 0.15s;
+    }
+    .btn-status-obra:hover { border-color: var(--accent); color: var(--text); }
+    .btn-status-obra.ativo { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
     .card-especial {
       opacity: 0.7;
       border-left: 3px solid var(--muted) !important;
@@ -1207,6 +1218,13 @@
 
     <!-- PAINEL: POR OBRA -->
     <div id="panel-por-obra" class="panel">
+      <!-- Filtros de status -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+        <button class="btn-status-obra ativo" onclick="filtrarStatusObra('TODAS',this)">Todas</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🟢 Em andamento</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('PAUSADA',this)">🟡 Pausadas</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('CONCLUIDA',this)">✅ Concluídas</button>
+      </div>
       <div class="busca-cards">
         <input type="text" id="busca-obra" placeholder="Buscar obra / projeto..." autocomplete="off"
           oninput="filtrarCardsObra()" />
@@ -2273,6 +2291,24 @@
     document.querySelectorAll('#grid-colab .resumo-card').forEach(c => c.classList.remove('selecionado'));
   }
 
+  let obraStatusFiltro = 'TODAS';
+
+  function filtrarStatusObra(status, btn) {
+    obraStatusFiltro = status;
+    document.querySelectorAll('.btn-status-obra').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderPorObra();
+  }
+
+  async function alterarStatusObra(id, status) {
+    // Se concluída → oculta automaticamente; senão → torna visível
+    const oculto = status === 'CONCLUIDA';
+    await sb.from('obras').update({ status, oculto }).eq('id', id);
+    await carregarObrasDB();
+    renderPorObra();
+    mostrarToast(status === 'CONCLUIDA' ? 'Obra concluída e ocultada dos colaboradores.' : 'Status atualizado.');
+  }
+
   function renderPorObra() {
     const grid  = document.getElementById('grid-obra');
     const fonte = isAdmin ? dadosAdmin : dados;
@@ -2285,28 +2321,81 @@
       mapa[r.obra].dias.add(r.data);
       if (OBRAS_ESPECIAIS.has(r.obra)) mapa[r.obra].especial = true;
     });
-    // Separa obras normais das especiais
-    const normais   = Object.entries(mapa).filter(([,v]) => !v.especial).sort((a,b) => b[1].horas - a[1].horas);
+
+    // Inclui obras cadastradas pelo admin (sem registros ainda)
+    obrasCacheAll.forEach(o => {
+      if (!mapa[o.nome] && !OBRAS_ESPECIAIS.has(o.nome)) {
+        mapa[o.nome] = { horas: 0, pessoas: new Set(), dias: new Set(), especial: false, semRegistros: true, obraId: o.id, status: o.status || 'EM ANDAMENTO' };
+      } else if (mapa[o.nome]) {
+        mapa[o.nome].obraId = o.id;
+        mapa[o.nome].status = o.status || 'EM ANDAMENTO';
+      }
+    });
+
+    // Separa normais e especiais
+    let normais   = Object.entries(mapa).filter(([,v]) => !v.especial);
     const especiais = Object.entries(mapa).filter(([,v]) =>  v.especial).sort((a,b) => a[0].localeCompare(b[0]));
-    const lista     = [...normais, ...especiais];
-    const maxHoras  = normais.length > 0 ? normais[0][1].horas : 1;
-    const totalG    = normais.reduce((s, [,v]) => s + v.horas, 0);
+
+    // Aplica filtro de status (só para normais)
+    if (obraStatusFiltro !== 'TODAS') {
+      normais = normais.filter(([,v]) => (v.status || 'EM ANDAMENTO') === obraStatusFiltro);
+    }
+
+    normais.sort((a,b) => b[1].horas - a[1].horas);
+    // Especiais só aparecem na aba "Todas"
+    const listaEspeciais = obraStatusFiltro === 'TODAS' ? especiais : [];
+    const lista = [...normais, ...listaEspeciais];
+
+    // Contagens para os botões de status
+    const todasNormais = Object.entries(mapa).filter(([,v]) => !v.especial);
+    const contagens = {
+      'TODAS':        todasNormais.length,
+      'EM ANDAMENTO': todasNormais.filter(([,v]) => (v.status||'EM ANDAMENTO') === 'EM ANDAMENTO').length,
+      'PAUSADA':      todasNormais.filter(([,v]) => (v.status||'EM ANDAMENTO') === 'PAUSADA').length,
+      'CONCLUIDA':    todasNormais.filter(([,v]) => (v.status||'EM ANDAMENTO') === 'CONCLUIDA').length,
+    };
+    document.querySelectorAll('.btn-status-obra').forEach(btn => {
+      const s = btn.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+      if (s && contagens[s] !== undefined) {
+        btn.textContent = btn.textContent.replace(/\s*\(\d+\)/, '') + ` (${contagens[s]})`;
+      }
+    });
+    const maxHoras = normais.length > 0 ? normais[0][1].horas : 1;
+    const totalG   = normais.reduce((s, [,v]) => s + v.horas, 0);
+
+    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusOpts = ['EM ANDAMENTO','PAUSADA','CONCLUIDA'];
 
     grid.innerHTML = lista.length === 0
-      ? `<div class="empty"><strong>Sem dados</strong>Adicione registros para ver o resumo.</div>`
+      ? `<div class="empty"><strong>Sem obras</strong>${obraStatusFiltro !== 'TODAS' ? 'Nenhuma obra com este status.' : 'Cadastre obras na aba Obras.'}</div>`
       : lista.map(([nome, val]) => {
-          const esp = val.especial;
-          return `<div class="resumo-card clicavel ${esp ? 'card-especial' : ''}" onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}')">
+          const esp    = val.especial;
+          const st     = val.status || 'EM ANDAMENTO';
+          const semReg = val.semRegistros;
+          const obraId = val.obraId;
+
+          const selectStatus = isAdmin && !esp && obraId ? `
+            <div style="margin-top:8px;" onclick="event.stopPropagation()">
+              <select class="status-select-card" onchange="alterarStatusObra('${obraId}',this.value)"
+                style="background:var(--bg2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:2px 6px;font-family:var(--font);cursor:pointer;outline:none;">
+                ${statusOpts.map(s => `<option value="${s}" ${s===st?'selected':''}>${statusIcon[s]} ${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('')}
+              </select>
+            </div>` : (!esp ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">${statusIcon[st] || ''} ${st.charAt(0)+st.slice(1).toLowerCase()}</div>` : '');
+
+          return `<div class="resumo-card ${!semReg ? 'clicavel' : ''} ${esp ? 'card-especial' : ''} ${semReg ? 'card-sem-reg' : ''}"
+            ${!semReg ? `onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}' )"` : ''}>
             <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
-            <div class="total-h" ${esp ? 'style="opacity:0.7;"' : ''}>${decimalParaHora(val.horas)}</div>
-            <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
+            <div class="total-h" ${esp||semReg ? 'style="opacity:0.6;"' : ''}>${decimalParaHora(val.horas)}</div>
+            <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : semReg ? 'Sem registros ainda' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
+            ${selectStatus}
           </div>`;
         }).join('');
 
     document.getElementById('footer-obra-total').textContent =
-      normais.length > 0 ? `${normais.length} obra(s) · Total: ${decimalParaHora(totalG)}` : '';
+      normais.filter(([,v]) => !v.semRegistros).length > 0
+        ? `${normais.filter(([,v])=>!v.semRegistros).length} obra(s) · Total: ${decimalParaHora(totalG)}`
+        : '';
 
-    // Fecha detalhe ao re-renderizar
     fecharDetalheObra();
   }
 

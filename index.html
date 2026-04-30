@@ -2483,13 +2483,20 @@
     });
 
     // Admin: inclui obras cadastradas sem registros ainda
-    // Colaborador: só vê obras onde lançou registros
+    // Colaborador: só vê obras onde lançou registros, mas pega o status do banco
     if (isAdmin) {
       obrasCacheAll.forEach(o => {
         if (!mapa[o.nome] && !OBRAS_ESPECIAIS.has(o.nome)) {
           mapa[o.nome] = { horas: 0, pessoas: new Set(), dias: new Set(), especial: false, semRegistros: true, obraId: o.id, status: o.status || 'EM ANDAMENTO' };
         } else if (mapa[o.nome]) {
           mapa[o.nome].obraId = o.id;
+          mapa[o.nome].status = o.status || 'EM ANDAMENTO';
+        }
+      });
+    } else {
+      // Colaborador: busca status das obras no cache
+      obrasCacheAll.forEach(o => {
+        if (mapa[o.nome]) {
           mapa[o.nome].status = o.status || 'EM ANDAMENTO';
         }
       });

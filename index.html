@@ -961,14 +961,8 @@
     <button class="btn-chat" id="btn-reservas" onclick="toggleReservas()" title="Reserva de Salas">
       🗓️
     </button>
-    <!-- Botão Backup (só admin) -->
-    <button class="btn-chat" id="btn-backup" onclick="gerarBackupExcel()" title="Exportar Backup Completo" style="display:none;">
-      📦
-    </button>
-    <!-- Botão Resumo (só admin) -->
-    <button class="btn-chat" id="btn-resumo" onclick="abrirResumo()" title="Resumo Geral" style="display:none;">
-      📋
-    </button>
+    <button class="btn-chat" id="btn-backup" onclick="gerarBackupExcel()" title="Exportar Backup Completo" style="display:none;">📦</button>
+    <button class="btn-chat" id="btn-resumo" onclick="abrirResumo()" title="Resumo Geral" style="display:none;">📋</button>
     <!-- Botão Chat -->
     <button class="btn-chat" id="btn-chat" onclick="toggleChat()" title="Chat">
       💬
@@ -1246,7 +1240,7 @@
       <!-- Filtros de status (só para admin) -->
       <div id="obra-status-filtros" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
         <button class="btn-status-obra ativo" onclick="filtrarStatusObra('TODAS',this)">Todas</button>
-        <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🔵 Em andamento</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🟢 Em andamento</button>
         <button class="btn-status-obra" onclick="filtrarStatusObra('PAUSADA',this)">🟡 Pausadas</button>
         <button class="btn-status-obra" onclick="filtrarStatusObra('CONCLUIDA',this)">✅ Concluídas</button>
       </div>
@@ -1334,7 +1328,7 @@
           <div class="field">
             <label>Status</label>
             <select id="inp-obra-status" class="field-select">
-              <option value="EM ANDAMENTO">🔵 Em andamento</option>
+              <option value="EM ANDAMENTO">🟢 Em andamento</option>
               <option value="PAUSADA">🟡 Pausada</option>
               <option value="CONCLUIDA">✅ Concluída</option>
             </select>
@@ -1382,6 +1376,11 @@
               style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
           </div>
           <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Sigla da Cidade<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-sigla')">📋</button></label>
+            <input type="text" id="inp-obra-sigla" placeholder="Ex: BH, SP, RJ..."
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
+          </div>
+          <div class="field">
             <label style="display:flex;align-items:center;justify-content:space-between;">Recurso Financeiro<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-recurso')">📋</button></label>
             <input type="text" id="inp-obra-recurso" placeholder="Ex: Federal, Estadual..."
               style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
@@ -1399,16 +1398,6 @@
           <!-- Informações do Cliente -->
           <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
             <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Informações do Cliente</div>
-          </div>
-          <div class="field">
-            <label style="display:flex;align-items:center;justify-content:space-between;">Sigla da Cidade<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-sigla')">📋</button></label>
-            <input type="text" id="inp-obra-sigla" placeholder="Ex: BH, SP, RJ..."
-              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
-          </div>
-          <div class="field">
-            <label style="display:flex;align-items:center;justify-content:space-between;">Estado<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-estado')">📋</button></label>
-            <input type="text" id="inp-obra-estado" placeholder="Ex: MG, SP, RJ..."
-              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label style="display:flex;align-items:center;justify-content:space-between;">Endereço<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-endereco')">📋</button></label>
@@ -2548,7 +2537,7 @@
     const maxHoras = normais.length > 0 ? normais[0][1].horas : 1;
     const totalG   = normais.reduce((s, [,v]) => s + v.horas, 0);
 
-    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
     const statusOpts = ['EM ANDAMENTO','PAUSADA','CONCLUIDA'];
 
     grid.innerHTML = lista.length === 0
@@ -2638,7 +2627,7 @@
   }
 
   function renderDadosObra(o) {
-    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
     const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
 
     const secao = (titulo, campos) => {
@@ -2672,6 +2661,7 @@
         ['Prioridade',           (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
         ['Código do Projeto',    o.codigo_projeto],
         ['Área',                 o.area],
+        ['Sigla da Cidade',      o.sigla_cidade],
         ['Recurso Financeiro',   o.recurso_financeiro],
         ['Valor da Obra',        o.valor_obra],
         ['Responsáveis',         o.responsaveis],
@@ -2680,9 +2670,7 @@
         ['Data Fim',             o.data_fim    ? formatarData(o.data_fim)    : null],
       ]) +
       secao('Informações do Cliente', [
-        ['Sigla da Cidade', o.sigla_cidade],
-        ['Estado',           o.cliente_estado],
-        ['Endereço',         o.cliente_endereco],
+        ['Endereço',  o.cliente_endereco],
         ['CNPJ',      o.cliente_cnpj],
         ['Telefone',  o.cliente_telefone],
         ['E-mail',    o.cliente_email],
@@ -3026,7 +3014,7 @@
             ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;">
-            ${o.status ? `<span style="font-size:10px;color:var(--muted);">${o.status==='EM ANDAMENTO'?'🔵':o.status==='PAUSADA'?'🟡':'✅'} ${o.status}</span>` : ''}
+            ${o.status ? `<span style="font-size:10px;color:var(--muted);">${o.status==='EM ANDAMENTO'?'🟢':o.status==='PAUSADA'?'🟡':'✅'} ${o.status}</span>` : ''}
             ${o.prioridade && o.prioridade!=='NORMAL' ? `<span style="font-size:10px;color:var(--muted);">${o.prioridade==='ALTA'?'🟠':o.prioridade==='URGENTE'?'🔴':'🔵'} ${o.prioridade}</span>` : ''}
             ${o.data_inicio ? `<span style="font-size:10px;color:var(--muted);">📅 ${formatarData(o.data_inicio)}${o.data_fim?' → '+formatarData(o.data_fim):''}</span>` : ''}
             ${o.responsaveis ? `<span style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;max-width:150px;white-space:nowrap;">👤 ${escapeHTML(o.responsaveis)}</span>` : ''}
@@ -3069,7 +3057,6 @@
     document.getElementById('inp-obra-area').value           = '';
     document.getElementById('inp-obra-codigo').value         = '';
     document.getElementById('inp-obra-sigla').value          = '';
-    document.getElementById('inp-obra-estado').value         = '';
     document.getElementById('inp-obra-recurso').value        = '';
     document.getElementById('inp-obra-valor').value          = '';
     document.getElementById('inp-obra-resp-tecnicos').value  = '';
@@ -3115,7 +3102,7 @@
     document.getElementById('viz-obra-conteudo').innerHTML =
       document.getElementById('painel-dados-obra')?.innerHTML || '';
     // Renderiza direto no modal
-    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
     const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
     const secao = (titulo, campos) => {
       const itens = campos.filter(([,v]) => v).map(([l,v]) => {
@@ -3145,6 +3132,7 @@
         ['Prioridade',         (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
         ['Código do Projeto',  o.codigo_projeto],
         ['Área',               o.area],
+        ['Sigla da Cidade',    o.sigla_cidade],
         ['Recurso Financeiro', o.recurso_financeiro],
         ['Valor da Obra',      o.valor_obra],
         ['Responsáveis',       o.responsaveis],
@@ -3153,9 +3141,7 @@
         ['Data Fim',           o.data_fim    ? formatarData(o.data_fim)    : null],
       ]) +
       secao('Informações do Cliente', [
-        ['Sigla da Cidade', o.sigla_cidade],
-        ['Estado',           o.cliente_estado],
-        ['Endereço',         o.cliente_endereco],
+        ['Endereço', o.cliente_endereco],
         ['CNPJ',     o.cliente_cnpj],
         ['Telefone', o.cliente_telefone],
         ['E-mail',   o.cliente_email],
@@ -3183,7 +3169,6 @@
     document.getElementById('inp-obra-area').value           = (o && o.area)                  || '';
     document.getElementById('inp-obra-codigo').value         = (o && o.codigo_projeto)        || '';
     document.getElementById('inp-obra-sigla').value          = (o && o.sigla_cidade)          || '';
-    document.getElementById('inp-obra-estado').value         = (o && o.cliente_estado)        || '';
     document.getElementById('inp-obra-recurso').value        = (o && o.recurso_financeiro)    || '';
     document.getElementById('inp-obra-valor').value          = (o && o.valor_obra)            || '';
     document.getElementById('inp-obra-resp-tecnicos').value  = (o && o.responsaveis_tecnicos) || '';
@@ -3211,7 +3196,6 @@
     const area                  = document.getElementById('inp-obra-area').value.trim()          || null;
     const codigo_projeto        = document.getElementById('inp-obra-codigo').value.trim()        || null;
     const sigla_cidade          = document.getElementById('inp-obra-sigla').value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || null;
-    const cliente_estado        = document.getElementById('inp-obra-estado').value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || null;
     const recurso_financeiro    = document.getElementById('inp-obra-recurso').value.trim()       || null;
     const valor_obra            = document.getElementById('inp-obra-valor').value.trim()         || null;
     const responsaveis_tecnicos = document.getElementById('inp-obra-resp-tecnicos').value.trim() || null;
@@ -3225,7 +3209,7 @@
 
     const payload = { nome, status, prioridade, responsaveis: responsaveis || null,
       data_inicio, data_fim, oculto,
-      cliente_endereco, cliente_estado, cliente_cnpj, cliente_telefone, cliente_email,
+      cliente_endereco, cliente_cnpj, cliente_telefone, cliente_email,
       area, codigo_projeto, sigla_cidade, recurso_financeiro, valor_obra, responsaveis_tecnicos,
       contrato_info, escopo, historico };
 
@@ -3764,8 +3748,45 @@
     gerarExcel(dados, 'registros_completos');
   }
 
+  // ─── BACKUP COMPLETO ────────────────────────────────
+  async function gerarBackupExcel() {
+    mostrarToast('Gerando backup... aguarde.');
+    mostrarLoading(true);
+    try {
+      const { data: todos } = await sb.from('registros').select('*').order('data', { ascending: false });
+      if (!todos || todos.length === 0) { mostrarToast('Nenhum registro encontrado.', 'info'); return; }
+      const hoje = toLocalISO(new Date());
+      const wb  = XLSX.utils.book_new();
+      const wsAll = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(todos)]);
+      aplicarFormatoHoras(wsAll, todos.length + 2); estilizarPlanilha(wsAll);
+      XLSX.utils.book_append_sheet(wb, wsAll, 'Todos os Registros');
+      const obras = [...new Set(todos.map(r => r.obra).filter(Boolean))].sort();
+      obras.forEach(obra => {
+        const sub = todos.filter(r => r.obra === obra);
+        const ws  = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(sub)]);
+        aplicarFormatoHoras(ws, sub.length + 2); estilizarPlanilha(ws);
+        XLSX.utils.book_append_sheet(wb, ws, obra.substring(0, 31));
+      });
+      XLSX.writeFile(wb, `backup_por_obra_${hoje}.xlsx`);
+      const wb2 = XLSX.utils.book_new();
+      const colabs = [...new Set(todos.map(r => r.colaborador).filter(Boolean))].sort();
+      colabs.forEach(colab => {
+        const sub = todos.filter(r => r.colaborador === colab);
+        const ws  = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(sub)]);
+        aplicarFormatoHoras(ws, sub.length + 2); estilizarPlanilha(ws);
+        XLSX.utils.book_append_sheet(wb2, ws, colab.substring(0, 31));
+      });
+      XLSX.writeFile(wb2, `backup_por_colaborador_${hoje}.xlsx`);
+      mostrarToast('Backup gerado! 2 arquivos Excel baixados.');
+    } catch(e) {
+      mostrarToast('Erro ao gerar backup.', 'erro');
+    } finally {
+      mostrarLoading(false);
+    }
+  }
+
   // ─── RESUMO GERAL ────────────────────────────────────
-  async function abrirResumo() {
+  function abrirResumo() {
     let modal = document.getElementById('modal-resumo');
     if (!modal) {
       modal = document.createElement('div');
@@ -3779,42 +3800,30 @@
             <button onclick="document.getElementById('modal-resumo').style.display='none'"
               style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">✕</button>
           </div>
-          <!-- Filtro de período para horas -->
           <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Período para contagem de horas (outros dados são sempre totais):</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Período para horas (demais dados são sempre totais):</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <div>
-                <label style="font-size:11px;color:var(--muted);">De</label>
-                <input type="date" id="resumo-de"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:12px;font-family:var(--font);outline:none;" />
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--muted);">Até</label>
-                <input type="date" id="resumo-ate"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:12px;font-family:var(--font);outline:none;" />
-              </div>
+              <div><label style="font-size:11px;color:var(--muted);">De</label>
+                <input type="date" id="resumo-de" style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:12px;font-family:var(--font);outline:none;" /></div>
+              <div><label style="font-size:11px;color:var(--muted);">Até</label>
+                <input type="date" id="resumo-ate" style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:12px;font-family:var(--font);outline:none;" /></div>
               <button class="btn-add" style="height:30px;font-size:12px;" onclick="gerarTextoResumo()">Gerar</button>
             </div>
           </div>
           <div id="resumo-loading" style="display:none;text-align:center;color:var(--muted);padding:20px;">Carregando...</div>
-          <div id="resumo-texto" style="display:none;font-size:13px;color:var(--text);line-height:1.9;
-            background:var(--bg3);border-radius:var(--radius);padding:16px;white-space:pre-wrap;"></div>
+          <div id="resumo-texto" style="display:none;font-size:13px;color:var(--text);line-height:1.9;background:var(--bg3);border-radius:var(--radius);padding:16px;white-space:pre-wrap;"></div>
           <div id="resumo-acoes" style="display:none;margin-top:10px;text-align:right;">
             <button class="btn-filter" style="height:30px;font-size:12px;" onclick="copiarResumo()">📋 Copiar texto</button>
           </div>
         </div>`;
       document.body.appendChild(modal);
     }
-
-    // Define datas padrão: início do mês até hoje
     const hoje = toLocalISO(new Date());
-    const inicioMes = hoje.slice(0,7) + '-01';
-    document.getElementById('resumo-de').value  = inicioMes;
+    document.getElementById('resumo-de').value  = hoje.slice(0,7) + '-01';
     document.getElementById('resumo-ate').value = hoje;
     document.getElementById('resumo-texto').style.display   = 'none';
     document.getElementById('resumo-acoes').style.display   = 'none';
     document.getElementById('resumo-loading').style.display = 'none';
-
     modal.style.display = 'flex';
   }
 
@@ -3824,90 +3833,63 @@
     const loading = document.getElementById('resumo-loading');
     const textoEl = document.getElementById('resumo-texto');
     const acoes   = document.getElementById('resumo-acoes');
-
     loading.style.display = 'block';
     textoEl.style.display = 'none';
     acoes.style.display   = 'none';
-
     try {
-      // Busca dados em paralelo
-      const [{ data: obras }, { data: perfis }, { data: regFiltrado }] = await Promise.all([
+      const [{ data: obras }, { data: perfis }, { data: regs }] = await Promise.all([
         sb.from('obras').select('nome,status,sigla_cidade,cliente_estado').eq('ativo', true),
         sb.from('profiles').select('id').not('nome','is',null),
-        sb.from('registros').select('horas,obra,disciplina')
-          .gte('data', de || '2000-01-01')
-          .lte('data', ate || toLocalISO(new Date()))
+        sb.from('registros').select('horas,obra,disciplina,setor')
+          .gte('data', de || '2000-01-01').lte('data', ate || toLocalISO(new Date()))
       ]);
 
       const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
-      const regsValidos = (regFiltrado || []).filter(r => !ESPECIAIS.has(r.obra));
+      const regsV = (regs || []).filter(r => !ESPECIAIS.has(r.obra));
 
-      // Totais de obras
-      const totalObras  = (obras || []).length;
-      const emAndamento = (obras || []).filter(o => (o.status||'EM ANDAMENTO') === 'EM ANDAMENTO').length;
-      const pausadas    = (obras || []).filter(o => o.status === 'PAUSADA').length;
-      const concluidas  = (obras || []).filter(o => o.status === 'CONCLUIDA').length;
+      // Obras
+      const totalObras  = (obras||[]).length;
+      const emAndamento = (obras||[]).filter(o=>(o.status||'EM ANDAMENTO')==='EM ANDAMENTO').length;
+      const pausadas    = (obras||[]).filter(o=>o.status==='PAUSADA').length;
+      const concluidas  = (obras||[]).filter(o=>o.status==='CONCLUIDA').length;
 
-      // Obras por estado
-      const mapaEstados = {};
-      (obras || []).forEach(o => {
-        if (o.cliente_estado) {
-          const est = o.cliente_estado.trim();
-          mapaEstados[est] = (mapaEstados[est] || 0) + 1;
-        }
-      });
-      const estadosTexto = Object.entries(mapaEstados)
-        .sort((a,b) => b[1]-a[1])
-        .map(([est, qtd]) => `${qtd} no estado de ${est}`)
-        .join(', ');
-
-      // Cidades únicas
+      // Estados
+      const mapEst = {};
+      (obras||[]).forEach(o=>{ if(o.cliente_estado){ const e=o.cliente_estado.trim(); mapEst[e]=(mapEst[e]||0)+1; } });
+      const estTxt = Object.entries(mapEst).sort((a,b)=>b[1]-a[1]).map(([e,q])=>`${q} no estado de ${e}`).join(', ');
       const totalCidades = new Set((obras||[]).map(o=>o.sigla_cidade).filter(Boolean)).size;
 
-      // Total de horas no período
-      const totalHoras = regsValidos.reduce((s,r) => s + (r.horas||0), 0);
+      // Horas totais
+      const totalHoras = regsV.reduce((s,r)=>s+(r.horas||0),0);
 
-      // Horas por disciplina
-      const mapaDisciplinas = {};
-      regsValidos.forEach(r => {
-        const disc = r.disciplina || 'SEM DISCIPLINA';
-        mapaDisciplinas[disc] = (mapaDisciplinas[disc] || 0) + (r.horas || 0);
-      });
-      const disciplinasOrdenadas = Object.entries(mapaDisciplinas)
-        .sort((a,b) => b[1]-a[1]);
+      // Por setor
+      const mapSet = {};
+      regsV.forEach(r=>{ const s=r.setor||'SEM SETOR'; mapSet[s]=(mapSet[s]||0)+(r.horas||0); });
+      const setOrd = Object.entries(mapSet).sort((a,b)=>b[1]-a[1]);
 
-      // Colaboradores cadastrados
-      const totalColabs = (perfis || []).length;
+      // Por disciplina
+      const mapDisc = {};
+      regsV.forEach(r=>{ const d=r.disciplina||'SEM DISCIPLINA'; mapDisc[d]=(mapDisc[d]||0)+(r.horas||0); });
+      const discOrd = Object.entries(mapDisc).sort((a,b)=>b[1]-a[1]);
 
-      // Período formatado
-      const fmtData = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-      const periodoTexto = de && ate ? ` (${fmtData(de)} a ${fmtData(ate)})` : '';
+      const totalColabs = (perfis||[]).length;
+      const fmtD = d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const periodoTxt = de && ate ? ` (${fmtD(de)} a ${fmtD(ate)})` : '';
       const hoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-      // Monta texto
       let texto = `Hoje, ${hoje}, temos ${totalObras} obra(s) cadastrada(s), sendo ${emAndamento} em andamento, ${pausadas} pausada(s) e ${concluidas} concluída(s).`;
-
-      if (estadosTexto) {
-        texto += `\n\nDessas obras temos ${estadosTexto}.`;
+      if (estTxt) {
+        texto += `\n\nDessas obras temos ${estTxt}.`;
         if (totalCidades > 0) texto += ` Distribuídas em ${totalCidades} cidade(s) diferente(s).`;
       }
-
-      // Horas com detalhamento por disciplina
-      if (disciplinasOrdenadas.length > 0) {
-        const discTexto = disciplinasOrdenadas
-          .map(([d,h]) => `${decimalParaHora(h)} horas de ${d}`)
-          .join(', ');
-        texto += `\n\nTemos ${decimalParaHora(totalHoras)} horas trabalhadas${periodoTexto}. Sendo ${discTexto}.`;
-      } else {
-        texto += `\n\nTemos ${decimalParaHora(totalHoras)} horas trabalhadas${periodoTexto}.`;
-      }
-
+      texto += `\n\nTemos ${decimalParaHora(totalHoras)} horas trabalhadas${periodoTxt}.`;
+      if (setOrd.length > 0) texto += `\n\nPor setor:\n${setOrd.map(([s,h])=>`${s}: ${decimalParaHora(h)}`).join(', ')}.`;
+      if (discOrd.length > 0) texto += `\n\nPor disciplina:\n${discOrd.map(([d,h])=>`${d}: ${decimalParaHora(h)}`).join(', ')}.`;
       texto += `\n\nTemos ${totalColabs} colaborador(es) cadastrado(s).`;
 
       textoEl.textContent  = texto;
       textoEl.style.display = 'block';
       acoes.style.display   = 'block';
-
     } catch(e) {
       textoEl.textContent   = 'Erro ao carregar resumo.';
       textoEl.style.display = 'block';
@@ -3918,70 +3900,8 @@
   }
 
   function copiarResumo() {
-    const texto = document.getElementById('resumo-texto').textContent;
-    if (!texto) return;
-    navigator.clipboard.writeText(texto).then(() => mostrarToast('Resumo copiado!'));
-  }
-
-  // ─── BACKUP COMPLETO ────────────────────────────────
-  async function gerarBackupExcel() {
-    mostrarToast('Gerando backup... aguarde.');
-    mostrarLoading(true);
-
-    try {
-      // Busca TODOS os registros do banco
-      const { data: todos } = await sb.from('registros')
-        .select('*').order('data', { ascending: false });
-
-      if (!todos || todos.length === 0) {
-        mostrarToast('Nenhum registro encontrado.', 'info');
-        return;
-      }
-
-      const wb = XLSX.utils.book_new();
-      const hoje = toLocalISO(new Date());
-
-      // ── ABA: Todos os Registros ──────────────────────
-      const wsAll = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(todos)]);
-      aplicarFormatoHoras(wsAll, todos.length + 2);
-      estilizarPlanilha(wsAll);
-      XLSX.utils.book_append_sheet(wb, wsAll, 'Todos os Registros');
-
-      // ── ABAS: Por Obra ───────────────────────────────
-      const obras = [...new Set(todos.map(r => r.obra).filter(Boolean))].sort();
-      obras.forEach(obra => {
-        const sub  = todos.filter(r => r.obra === obra);
-        const ws   = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(sub)]);
-        aplicarFormatoHoras(ws, sub.length + 2);
-        estilizarPlanilha(ws);
-        XLSX.utils.book_append_sheet(wb, ws, obra.substring(0, 31));
-      });
-
-      XLSX.writeFile(wb, `backup_por_obra_${hoje}.xlsx`);
-
-      // ── SEGUNDO ARQUIVO: Por Colaborador ─────────────
-      const wb2 = XLSX.utils.book_new();
-      const colabs = [...new Set(todos.map(r => r.colaborador).filter(Boolean))].sort();
-
-      colabs.forEach(colab => {
-        const sub  = todos.filter(r => r.colaborador === colab);
-        const ws   = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...registrosParaLinhas(sub)]);
-        aplicarFormatoHoras(ws, sub.length + 2);
-        estilizarPlanilha(ws);
-        const nomeAba = colab.substring(0, 31);
-        XLSX.utils.book_append_sheet(wb2, ws, nomeAba);
-      });
-
-      XLSX.writeFile(wb2, `backup_por_colaborador_${hoje}.xlsx`);
-
-      mostrarToast('Backup gerado! 2 arquivos Excel baixados.');
-
-    } catch(e) {
-      mostrarToast('Erro ao gerar backup.', 'erro');
-      console.error(e);
-    } finally {
-      mostrarLoading(false);
-    }
+    const t = document.getElementById('resumo-texto').textContent;
+    if (t) navigator.clipboard.writeText(t).then(()=>mostrarToast('Resumo copiado!'));
   }
 
   function exportarCSVAdmin() {

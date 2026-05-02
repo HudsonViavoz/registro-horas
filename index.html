@@ -873,7 +873,7 @@
     <div id="form-login" class="auth-form active">
       <div class="auth-field">
         <label>E-mail</label>
-        <input type="email" id="auth-email" placeholder="seu@email.com" />
+        <input type="email" id="auth-email" placeholder="seu@email.com" style="text-transform:lowercase;" />
       </div>
       <div class="auth-field">
         <label>Senha</label>
@@ -893,7 +893,7 @@
       </p>
       <div class="auth-field">
         <label>E-mail</label>
-        <input type="email" id="reset-email" placeholder="seu@email.com" />
+        <input type="email" id="reset-email" placeholder="seu@email.com" style="text-transform:lowercase;" />
       </div>
       <div class="auth-erro"   id="reset-erro"></div>
       <div class="auth-sucesso" id="reset-ok"></div>
@@ -924,7 +924,11 @@
     <div id="form-cadastro" class="auth-form">
       <div class="auth-field">
         <label>E-mail</label>
-        <input type="email" id="cad-email" placeholder="seu@email.com" />
+        <input type="email" id="cad-email" placeholder="seu@email.com" style="text-transform:lowercase;" />
+      </div>
+      <div class="auth-field">
+        <label>Confirmar e-mail</label>
+        <input type="email" id="cad-email-conf" placeholder="repita o e-mail" style="text-transform:lowercase;" />
       </div>
       <div class="auth-field">
         <label>Senha</label>
@@ -1024,7 +1028,7 @@
           </select>
         </div>
         <div class="field"><label for="d-lider">Líder / Responsável</label><input type="text" id="d-lider" placeholder="NOME DO LIDER" style="text-transform:uppercase;" /></div>
-        <div class="field"><label for="d-email">E-mail</label><input type="email" id="d-email" placeholder="seu@email.com" /></div>
+        <div class="field"><label for="d-email">E-mail</label><input type="email" id="d-email" placeholder="seu@email.com" style="text-transform:lowercase;" /></div>
         <div class="field"><label for="d-ramal">Ramal</label><input type="text" id="d-ramal" placeholder="Ex: 1234" maxlength="6" /></div>
       </div>
       <div class="dados-actions">
@@ -1324,6 +1328,14 @@
             <input type="text" id="inp-obra-modal" placeholder="NOME DA OBRA"
               style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
           </div>
+          <!-- Tipo de Obra -->
+          <div class="field" style="grid-column:1/-1;">
+            <label>Tipo de Obra</label>
+            <input type="text" id="inp-obra-tipo" placeholder="Ex: Escola, Hospital, Saneamento..."
+              autocomplete="off" list="list-tipos-obra"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
+            <datalist id="list-tipos-obra"></datalist>
+          </div>
           <!-- Status -->
           <div class="field">
             <label>Status</label>
@@ -1459,12 +1471,27 @@
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
     <div id="panel-admin" class="panel">
 
+      <!-- Card reset de senha -->
+      <div style="margin-bottom:1rem;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--info);border-radius:var(--radius-lg);padding:1rem 1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:var(--info);">🔑 Resetar Senha de Colaborador</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="reset-senha-select" class="field-select" style="flex:1;min-width:200px;">
+            <option value="">Selecione o colaborador...</option>
+          </select>
+          <button class="btn-add" style="height:34px;font-size:12px;white-space:nowrap;" onclick="resetarSenhaColaborador()">✉ Enviar e-mail de reset</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">O colaborador receberá um e-mail para cadastrar uma nova senha.</div>
+      </div>
+
       <!-- Card de alertas de atraso -->
       <div id="alertas-atraso" style="display:none;margin-bottom:1rem;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--danger);border-radius:var(--radius-lg);padding:1rem 1.2rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;color:var(--danger);">⚠ Colaboradores com dias em atraso</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span id="alertas-atraso-total" style="font-size:11px;color:var(--muted);"></span>
+            <button class="btn-filter" style="font-size:11px;height:26px;padding:0 8px;" onclick="toggleListaAtraso()" id="btn-toggle-atraso">▼ Exibir</button>
             <button class="btn-add" style="font-size:11px;height:28px;padding:0 10px;" onclick="toggleNotificarAtraso()">📢 Notificar</button>
           </div>
         </div>
@@ -1480,7 +1507,7 @@
             <span id="notificar-atraso-status" style="font-size:11px;color:var(--muted);"></span>
           </div>
         </div>
-        <div id="alertas-atraso-lista" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="alertas-atraso-lista" style="display:none;flex-direction:column;gap:6px;margin-top:8px;"></div>
       </div>
 
       <!-- Filtros rápidos de período -->
@@ -1779,6 +1806,7 @@
         renderAdmin();
         renderReunioesSemana();
         renderAlertasAtraso();
+        carregarSelectResetSenha();
         document.getElementById('followup-card').style.display = 'none';
       });
       carregarObrasDB();
@@ -1864,7 +1892,7 @@
   }
 
   async function fazerLogin() {
-    const email = document.getElementById('auth-email').value.trim();
+    const email = document.getElementById('auth-email').value.trim().toLowerCase();
     const senha = document.getElementById('auth-senha').value;
     const erro  = document.getElementById('login-erro');
 
@@ -1890,14 +1918,16 @@
   }
 
   async function fazerCadastro() {
-    const email = document.getElementById('cad-email').value.trim();
-    const senha = document.getElementById('cad-senha').value;
-    const conf  = document.getElementById('cad-conf').value;
-    const erro  = document.getElementById('cad-erro');
+    const email     = document.getElementById('cad-email').value.trim().toLowerCase();
+    const emailConf = document.getElementById('cad-email-conf').value.trim().toLowerCase();
+    const senha     = document.getElementById('cad-senha').value;
+    const conf      = document.getElementById('cad-conf').value;
+    const erro      = document.getElementById('cad-erro');
 
-    if (!email || !senha)  { erro.textContent = 'Preencha todos os campos.'; return; }
-    if (senha !== conf)    { erro.textContent = 'As senhas não coincidem.'; return; }
-    if (senha.length < 6)  { erro.textContent = 'Senha mínima: 6 caracteres.'; return; }
+    if (!email || !senha)         { erro.textContent = 'Preencha todos os campos.'; return; }
+    if (email !== emailConf)      { erro.textContent = 'Os e-mails não coincidem. Verifique e tente novamente.'; return; }
+    if (senha !== conf)           { erro.textContent = 'As senhas não coincidem.'; return; }
+    if (senha.length < 6)         { erro.textContent = 'Senha mínima: 6 caracteres.'; return; }
 
     mostrarLoading(true);
     erro.textContent = '';
@@ -2657,6 +2687,7 @@
 
     document.getElementById('painel-dados-obra').innerHTML =
       secao('Dados Gerais', [
+        ['Tipo de Obra',         o.tipo_obra],
         ['Status',               (statusIcon[o.status]||'') + ' ' + (o.status||'')],
         ['Prioridade',           (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
         ['Código do Projeto',    o.codigo_projeto],
@@ -2844,6 +2875,48 @@
       status.textContent = '';
     }, 3000);
   }
+  function toggleListaAtraso() {
+    const lista = document.getElementById('alertas-atraso-lista');
+    const btn   = document.getElementById('btn-toggle-atraso');
+    if (lista.style.display === 'none') {
+      lista.style.display = 'flex';
+      btn.textContent = '▲ Recolher';
+    } else {
+      lista.style.display = 'none';
+      btn.textContent = '▼ Exibir';
+    }
+  }
+
+  // ─── RESET DE SENHA (ADMIN) ─────────────────────────
+  async function carregarSelectResetSenha() {
+    const { data: perfis } = await sb.from('profiles')
+      .select('nome, email').not('nome','is',null).order('nome');
+    const sel = document.getElementById('reset-senha-select');
+    if (!sel || !perfis) return;
+    sel.innerHTML = '<option value="">Selecione o colaborador...</option>'
+      + perfis.filter(p => p.email).map(p =>
+          `<option value="${escapeHTML(p.email)}">${escapeHTML(p.nome)} — ${escapeHTML(p.email)}</option>`
+        ).join('');
+  }
+
+  async function resetarSenhaColaborador() {
+    const sel   = document.getElementById('reset-senha-select');
+    const email = sel?.value;
+    const nome  = sel?.options[sel.selectedIndex]?.text;
+    if (!email) { mostrarToast('Selecione um colaborador.', 'info'); return; }
+
+    // Confirma com o admin mostrando o e-mail
+    const confirmado = confirm(`Enviar e-mail de reset de senha para:\n\n👤 ${nome}\n✉ ${email}\n\nConfirmar?`);
+    if (!confirmado) return;
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://hudsonviavoz.github.io/registro-horas'
+    });
+    if (error) { mostrarToast('Erro ao enviar e-mail: ' + error.message, 'erro'); return; }
+    mostrarToast('E-mail de reset enviado para ' + email + '!');
+    sel.value = '';
+  }
+
   async function renderAlertasAtraso() {
     const card = document.getElementById('alertas-atraso');
     if (!isAdmin) { card.style.display = 'none'; return; }
@@ -2935,6 +3008,13 @@
     const dl = document.getElementById('list-obra');
     if (dl) dl.innerHTML = obrasCache.map(n => `<option value="${escapeHTML(n)}">`).join('');
 
+    // Atualiza datalist de tipos de obra
+    const dlTipo = document.getElementById('list-tipos-obra');
+    if (dlTipo) {
+      const tipos = [...new Set(obrasCacheAll.map(o => o.tipo_obra).filter(Boolean))].sort();
+      dlTipo.innerHTML = tipos.map(t => `<option value="${escapeHTML(t)}">`).join('');
+    }
+
     // Se admin, renderiza o painel de obras
     if (isAdmin) renderPainelObras();
   }
@@ -3011,6 +3091,7 @@
           <div style="font-size:13px;color:${o.oculto ? 'var(--muted)' : 'var(--text)'};
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHTML(o.nome)}">
             🏗 ${escapeHTML(o.nome)}
+            ${o.tipo_obra ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;">(${escapeHTML(o.tipo_obra)})</span>` : ''}
             ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;">
@@ -3045,6 +3126,7 @@
   function abrirModalNovaObra() {
     obraEditandoId = null;
     document.getElementById('inp-obra-modal').value        = '';
+    document.getElementById('inp-obra-tipo').value         = '';
     document.getElementById('inp-obra-status').value       = 'EM ANDAMENTO';
     document.getElementById('inp-obra-prioridade').value   = 'NORMAL';
     document.getElementById('inp-obra-responsaveis').value = '';
@@ -3157,6 +3239,7 @@
     const o = obrasCacheAll.find(x => x.id === id);
     obraEditandoId = id;
     document.getElementById('inp-obra-modal').value        = nome;
+    document.getElementById('inp-obra-tipo').value         = (o && o.tipo_obra) || '';
     document.getElementById('inp-obra-status').value       = (o && o.status)           || 'EM ANDAMENTO';
     document.getElementById('inp-obra-prioridade').value   = (o && o.prioridade)       || 'NORMAL';
     document.getElementById('inp-obra-responsaveis').value = (o && o.responsaveis)     || '';
@@ -3202,6 +3285,7 @@
     const contrato_info         = document.getElementById('inp-obra-contrato').value.trim()      || null;
     const escopo           = document.getElementById('inp-obra-escopo').value.trim()    || null;
     const historico        = document.getElementById('inp-obra-historico').value.trim() || null;
+    const tipo_obra        = document.getElementById('inp-obra-tipo').value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || null;
     const oculto           = status === 'CONCLUIDA';
     const erro             = document.getElementById('obra-modal-erro');
 
@@ -3211,7 +3295,7 @@
       data_inicio, data_fim, oculto,
       cliente_endereco, cliente_cnpj, cliente_telefone, cliente_email,
       area, codigo_projeto, sigla_cidade, recurso_financeiro, valor_obra, responsaveis_tecnicos,
-      contrato_info, escopo, historico };
+      contrato_info, escopo, historico, tipo_obra };
 
     let error;
     if (obraEditandoId) {
@@ -3883,8 +3967,8 @@
         if (totalCidades > 0) texto += ` Distribuídas em ${totalCidades} cidade(s) diferente(s).`;
       }
       texto += `\n\nTemos ${decimalParaHora(totalHoras)} horas trabalhadas${periodoTxt}.`;
-      if (setOrd.length > 0) texto += `\n\nPor setor:\n${setOrd.map(([s,h])=>`${s}: ${decimalParaHora(h)}`).join(', ')}.`;
-      if (discOrd.length > 0) texto += `\n\nPor disciplina:\n${discOrd.map(([d,h])=>`${d}: ${decimalParaHora(h)}`).join(', ')}.`;
+      if (setOrd.length > 0) texto += `\n\nPor setor:\n${setOrd.map(([s,h])=>`${s}: ${decimalParaHora(h)}`).join('\n')}.`;
+      if (discOrd.length > 0) texto += `\n\nPor disciplina:\n${discOrd.map(([d,h])=>`${d}: ${decimalParaHora(h)}`).join('\n')}.`;
       texto += `\n\nTemos ${totalColabs} colaborador(es) cadastrado(s).`;
 
       textoEl.textContent  = texto;

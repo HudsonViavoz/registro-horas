@@ -1389,9 +1389,14 @@
               style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
           </div>
           <div class="field">
-            <label style="display:flex;align-items:center;justify-content:space-between;">Sigla da Cidade<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-sigla')">📋</button></label>
-            <input type="text" id="inp-obra-sigla" placeholder="Ex: BH, SP, RJ..."
-              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;box-sizing:border-box;" />
+            <label style="display:flex;align-items:center;justify-content:space-between;">Cidade<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-sigla')">📋</button></label>
+            <input type="text" id="inp-obra-sigla" placeholder="Ex: Belo Horizonte"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Estado<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-estado')">📋</button></label>
+            <input type="text" id="inp-obra-estado" placeholder="Ex: Minas Gerais"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
           </div>
           <div class="field">
             <label style="display:flex;align-items:center;justify-content:space-between;">Recurso Financeiro<button type="button" class="btn-copiar-campo" onclick="copiarCampo('inp-obra-recurso')">📋</button></label>
@@ -1477,7 +1482,7 @@
         <canvas id="chart-mensal" height="120"></canvas>
       </div>
       <!-- Ranking por Disciplina -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:1rem;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:2rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
           <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Horas por Disciplina</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-disciplinas','horas_disciplina')">↓ PNG</button>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -1500,7 +1505,7 @@
       </div>
 
       <!-- Ranking por Setor -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:1rem;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:2rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
           <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Horas por Setor</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-setor','horas_setor')">↓ PNG</button>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -1520,6 +1525,86 @@
           </div>
         </div>
         <canvas id="chart-setor"></canvas>
+      </div>
+
+      <!-- ── GRÁFICO: HORAS POR OBRA ── -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Horas por Obra</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-obra','horas_obra')">↓ PNG</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-periodo" onclick="filtroObraRapido('tudo',this)">Tudo</button>
+            <div style="position:relative;display:inline-flex;align-items:center;">
+              <button class="btn-periodo" id="obra-btn-mensal" onclick="document.getElementById('obra-mes-picker').showPicker ? document.getElementById('obra-mes-picker').showPicker() : document.getElementById('obra-mes-picker').click()">Mensal</button>
+              <input type="month" id="obra-mes-picker"
+                style="position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;"
+                onchange="filtroObraMes(this.value)" />
+            </div>
+            <span style="font-size:11px;color:var(--muted);">|</span>
+            <input type="date" id="obra-de" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <span style="font-size:11px;color:var(--muted);">até</span>
+            <input type="date" id="obra-ate" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="limparFiltroObra()">Limpar</button>
+            <button class="btn-add" style="height:26px;font-size:11px;padding:0 10px;" onclick="aplicarFiltroObra()">Filtrar</button>
+          </div>
+        </div>
+        <canvas id="chart-obra"></canvas>
+      </div>
+
+      <!-- ── CARD COMBINADO: COBERTURA GEOGRÁFICA ── -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:2rem;">
+
+        <!-- Cabeçalho -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📍 Cobertura Geográfica</div>
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGraficoGeoCombinado()">↓ PNG Combinado</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-periodo ativo" id="geo-btn-todas"      onclick="filtroGeoStatus('todas',this)">Todas</button>
+            <button class="btn-periodo"       id="geo-btn-ativas"     onclick="filtroGeoStatus('EM ANDAMENTO',this)">Em Andamento</button>
+            <button class="btn-periodo"       id="geo-btn-pausadas"   onclick="filtroGeoStatus('PAUSADA',this)">Pausadas</button>
+            <button class="btn-periodo"       id="geo-btn-concluidas" onclick="filtroGeoStatus('CONCLUIDA',this)">Concluídas</button>
+          </div>
+        </div>
+
+        <!-- KPIs: total de estados e cidades -->
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;text-align:center;">
+            <div id="geo-kpi-estados" style="font-size:28px;font-weight:700;color:var(--accent);line-height:1;">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Estados</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;text-align:center;">
+            <div id="geo-kpi-cidades" style="font-size:28px;font-weight:700;color:var(--info);line-height:1;">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Cidades</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;text-align:center;">
+            <div id="geo-kpi-obras" style="font-size:28px;font-weight:700;color:var(--success);line-height:1;">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">Obras</div>
+          </div>
+        </div>
+
+        <!-- Dois gráficos lado a lado -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Por Estado</div>
+              <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGraficoGeo('chart-geo-estados','cobertura_estados','Por Estado')">↓ PNG</button>
+            </div>
+            <div id="chart-geo-estados-wrap" style="position:relative;">
+              <canvas id="chart-geo-estados"></canvas>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Por Cidade</div>
+              <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGraficoGeo('chart-geo-cidades','cobertura_cidades','Por Cidade')">↓ PNG</button>
+            </div>
+            <div id="chart-geo-cidades-wrap" style="position:relative;">
+              <canvas id="chart-geo-cidades"></canvas>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2752,7 +2837,8 @@
         ['Prioridade',           (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
         ['Código do Projeto',    o.codigo_projeto],
         ['Área',                 o.area],
-        ['Sigla da Cidade',      o.sigla_cidade],
+        ['Cidade',               o.sigla_cidade],
+        ['Estado',               o.cliente_estado],
         ['Recurso Financeiro',   o.recurso_financeiro],
         ['Valor da Obra',        o.valor_obra],
         ['Responsáveis',         o.responsaveis],
@@ -2873,7 +2959,13 @@
   }
 
   function limparFiltrosAdmin() {
-    ['adm-de','adm-ate','adm-colab','adm-obra'].forEach(id => document.getElementById(id).value = '');
+    // Ao limpar, define o período como 1º dia do mês vigente até hoje
+    const hoje         = toLocalISO(new Date());
+    const primeiroDiaMes = hoje.slice(0, 7) + '-01';
+    document.getElementById('adm-de').value  = primeiroDiaMes;
+    document.getElementById('adm-ate').value = hoje;
+    document.getElementById('adm-colab').value = '';
+    document.getElementById('adm-obra').value  = '';
     document.querySelectorAll('#panel-admin .btn-periodo').forEach(b => b.classList.remove('ativo'));
     renderAdmin();
   }
@@ -2942,6 +3034,9 @@
   let chartMensal     = null;
   let chartDisciplinas = null;
   let chartSetor       = null;
+  let chartObra        = null;
+  let chartGeoEstados  = null;
+  let chartGeoCidades  = null;
 
   function renderDashboard() {
     if (!isAdmin || !dadosAdmin.length) return;
@@ -2958,6 +3053,8 @@
     renderChartMensal(regs);
     aplicarFiltroDisciplinas();
     aplicarFiltroSetor();
+    aplicarFiltroObra();
+    renderChartGeo('todas');
   }
 
   function filtroDiscRapido(tipo, btn) {
@@ -2990,6 +3087,7 @@
     // Pega o objeto Chart para alterar as cores temporariamente
     const chartObj = canvasId === 'chart-mensal' ? chartMensal
                    : canvasId === 'chart-disciplinas' ? chartDisciplinas
+                   : canvasId === 'chart-obra' ? chartObra
                    : chartSetor;
 
     // Salva cores originais e aplica preto
@@ -3009,10 +3107,12 @@
     const titulos = {
       'chart-mensal':      'Evolução Mensal de Horas',
       'chart-disciplinas': 'Horas por Disciplina',
-      'chart-setor':       'Horas por Setor'
+      'chart-setor':       'Horas por Setor',
+      'chart-obra':        'Horas por Obra'
     };
     const titulo = titulos[canvasId] || nome;
-    let periodo = 'Jan/2026 até hoje';
+    // Substitui "hoje" pela data real no momento da exportação
+    let periodo = `Jan/2026 até ${formatarData(toLocalISO(new Date()))}`;
     if (canvasId === 'chart-disciplinas') {
       const de = document.getElementById('disc-de')?.value;
       const ate = document.getElementById('disc-ate')?.value;
@@ -3020,6 +3120,10 @@
     } else if (canvasId === 'chart-setor') {
       const de = document.getElementById('setor-de')?.value;
       const ate = document.getElementById('setor-ate')?.value;
+      if (de && ate) periodo = `${formatarData(de)} a ${formatarData(ate)}`;
+    } else if (canvasId === 'chart-obra') {
+      const de = document.getElementById('obra-de')?.value;
+      const ate = document.getElementById('obra-ate')?.value;
       if (de && ate) periodo = `${formatarData(de)} a ${formatarData(ate)}`;
     }
 
@@ -3078,8 +3182,11 @@
     document.querySelectorAll('.btn-periodo[onclick^="filtroSetor"]').forEach(b => b.classList.remove('ativo'));
     document.getElementById('setor-btn-mensal').textContent = 'Mensal';
     document.getElementById('setor-mes-picker').value = '';
-    document.getElementById('setor-de').value  = '';
-    document.getElementById('setor-ate').value = '';
+    // Define o período como 1º dia do mês vigente até hoje
+    const hoje         = toLocalISO(new Date());
+    const primeiroDiaMes = hoje.slice(0, 7) + '-01';
+    document.getElementById('setor-de').value  = primeiroDiaMes;
+    document.getElementById('setor-ate').value = hoje;
     aplicarFiltroSetor();
   }
 
@@ -3141,16 +3248,389 @@
     });
   }
 
+  // ── FILTROS E GRÁFICO: HORAS POR OBRA ──────────────────────────────────
+
+  function filtroObraRapido(tipo, btn) {
+    // Ativa o botão clicado e define o período completo (desde Jan/2026 até hoje)
+    document.querySelectorAll('.btn-periodo[onclick^="filtroObra"]').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    const hoje = toLocalISO(new Date());
+    document.getElementById('obra-de').value  = '2026-01-01';
+    document.getElementById('obra-ate').value = hoje;
+    aplicarFiltroObra();
+  }
+
+  function filtroObraMes(mes) {
+    // Filtra pelo mês selecionado no picker
+    if (!mes) return;
+    document.querySelectorAll('.btn-periodo[onclick^="filtroObra"]').forEach(b => b.classList.remove('ativo'));
+    const btn = document.getElementById('obra-btn-mensal');
+    btn.classList.add('ativo');
+    const [ano, m] = mes.split('-');
+    const ultimo = new Date(parseInt(ano), parseInt(m), 0).getDate();
+    document.getElementById('obra-de').value  = `${mes}-01`;
+    document.getElementById('obra-ate').value = `${mes}-${String(ultimo).padStart(2,'0')}`;
+    btn.textContent = new Date(mes + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.','');
+    aplicarFiltroObra();
+  }
+
+  function limparFiltroObra() {
+    // Remove ativo dos botões rápidos e reseta o período para o mês vigente
+    document.querySelectorAll('.btn-periodo[onclick^="filtroObra"]').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('obra-btn-mensal').textContent = 'Mensal';
+    document.getElementById('obra-mes-picker').value = '';
+    // Define o período como 1º dia do mês vigente até hoje
+    const hoje         = toLocalISO(new Date());
+    const primeiroDiaMes = hoje.slice(0, 7) + '-01';
+    document.getElementById('obra-de').value  = primeiroDiaMes;
+    document.getElementById('obra-ate').value = hoje;
+    aplicarFiltroObra();
+  }
+
+  function aplicarFiltroObra() {
+    // Filtra os registros pelo período selecionado, excluindo lançamentos especiais
+    const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+    const de  = document.getElementById('obra-de')?.value  || '2026-01-01';
+    const ate = document.getElementById('obra-ate')?.value || toLocalISO(new Date());
+    const regs = dadosAdmin.filter(r => r.data >= de && r.data <= ate && !ESPECIAIS.has(r.obra));
+    renderChartObra(regs);
+  }
+
+  function renderChartObra(regs) {
+    const ctx = document.getElementById('chart-obra');
+    if (!ctx) return;
+    if (chartObra) chartObra.destroy();
+
+    // Agrupa horas por obra e ordena do maior para o menor
+    const mapa = {};
+    regs.forEach(r => { const o = r.obra || 'SEM OBRA'; mapa[o] = (mapa[o] || 0) + r.horas; });
+    const sorted = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+    const labels = sorted.map(([o]) => o);
+    const values = sorted.map(([,h]) => Math.round(h * 100) / 100);
+
+    // Altura dinâmica conforme a quantidade de obras
+    ctx.parentElement.style.height = Math.max(160, sorted.length * 44 + 40) + 'px';
+
+    const cores = ['#5b9bd5','#f0a500','#4caf88','#e05a5a','#9b59b6','#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad'];
+
+    Chart.register(ChartDataLabels);
+    chartObra = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_,i) => cores[i % cores.length] + 'cc'),
+          borderColor:      labels.map((_,i) => cores[i % cores.length]),
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 60 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => '  ' + decimalParaHora(c.raw) + 'h' } },
+          datalabels: {
+            anchor: 'end', align: 'end',
+            color: '#aaa', font: { size: 11, weight: '600' },
+            formatter: v => decimalParaHora(v)
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#888', callback: v => decimalParaHora(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── COBERTURA GEOGRÁFICA: ESTADOS E CIDADES ────────────────────────────
+
+  function filtroGeoStatus(status, btn) {
+    // Ativa o botão selecionado e re-renderiza com o filtro de status
+    document.querySelectorAll('#geo-btn-todas, #geo-btn-ativas, #geo-btn-pausadas, #geo-btn-concluidas')
+      .forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderChartGeo(status);
+  }
+
+  function renderChartGeo(statusFiltro) {
+    // Usa obrasCacheAll (obras já carregadas) como fonte de dados geográficos
+    if (!obrasCacheAll || !obrasCacheAll.length) return;
+
+    // Filtra obras pelo status selecionado
+    const obras = statusFiltro === 'todas'
+      ? obrasCacheAll
+      : obrasCacheAll.filter(o => (o.status || 'EM ANDAMENTO') === statusFiltro);
+
+    // Calcula KPIs
+    const totalEstados = new Set(obras.map(o => o.cliente_estado).filter(Boolean)).size;
+    const totalCidades = new Set(obras.map(o => o.sigla_cidade).filter(Boolean)).size;
+    const totalObras   = obras.length;
+
+    // Atualiza os KPIs no topo do card
+    document.getElementById('geo-kpi-estados').textContent = totalEstados || '—';
+    document.getElementById('geo-kpi-cidades').textContent = totalCidades || '—';
+    document.getElementById('geo-kpi-obras').textContent   = totalObras   || '—';
+
+    // Monta dados para o gráfico de Estados (contagem de obras por estado)
+    const mapaEstados = {};
+    obras.forEach(o => {
+      if (o.cliente_estado) {
+        const e = o.cliente_estado.trim();
+        mapaEstados[e] = (mapaEstados[e] || 0) + 1;
+      }
+    });
+    const sortEstados = Object.entries(mapaEstados).sort((a,b) => b[1]-a[1]);
+
+    // Monta dados para o gráfico de Cidades (contagem de obras por cidade)
+    const mapaCidades = {};
+    obras.forEach(o => {
+      if (o.sigla_cidade) {
+        const c = o.sigla_cidade.trim();
+        mapaCidades[c] = (mapaCidades[c] || 0) + 1;
+      }
+    });
+    const sortCidades = Object.entries(mapaCidades).sort((a,b) => b[1]-a[1]);
+
+    const cores = ['#5b9bd5','#f0a500','#4caf88','#e05a5a','#9b59b6','#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad'];
+
+    // ── Gráfico de Estados ──
+    const ctxEst = document.getElementById('chart-geo-estados');
+    if (ctxEst) {
+      if (chartGeoEstados) chartGeoEstados.destroy();
+      const wrapEst = document.getElementById('chart-geo-estados-wrap');
+      wrapEst.style.height = Math.max(120, sortEstados.length * 44 + 40) + 'px';
+
+      Chart.register(ChartDataLabels);
+      chartGeoEstados = new Chart(ctxEst, {
+        type: 'bar',
+        data: {
+          labels: sortEstados.map(([e]) => e),
+          datasets: [{
+            data: sortEstados.map(([,q]) => q),
+            backgroundColor: sortEstados.map((_,i) => cores[i % cores.length] + 'cc'),
+            borderColor:      sortEstados.map((_,i) => cores[i % cores.length]),
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { right: 50 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => `  ${c.raw} obra(s)` } },
+            datalabels: {
+              anchor: 'end', align: 'end',
+              color: '#aaa', font: { size: 11, weight: '600' },
+              formatter: v => v
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#888', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── Gráfico de Cidades ──
+    const ctxCid = document.getElementById('chart-geo-cidades');
+    if (ctxCid) {
+      if (chartGeoCidades) chartGeoCidades.destroy();
+      const wrapCid = document.getElementById('chart-geo-cidades-wrap');
+      wrapCid.style.height = Math.max(120, sortCidades.length * 44 + 40) + 'px';
+
+      chartGeoCidades = new Chart(ctxCid, {
+        type: 'bar',
+        data: {
+          labels: sortCidades.map(([c]) => c),
+          datasets: [{
+            data: sortCidades.map(([,q]) => q),
+            backgroundColor: sortCidades.map((_,i) => cores[(i + 3) % cores.length] + 'cc'),
+            borderColor:      sortCidades.map((_,i) => cores[(i + 3) % cores.length]),
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { right: 50 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => `  ${c.raw} obra(s)` } },
+            datalabels: {
+              anchor: 'end', align: 'end',
+              color: '#aaa', font: { size: 11, weight: '600' },
+              formatter: v => v
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#888', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+  }
+
+  function exportarGraficoGeo(canvasId, nome, titulo) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    // Identifica qual objeto Chart corresponde ao canvas
+    const chartObj = canvasId === 'chart-geo-estados' ? chartGeoEstados : chartGeoCidades;
+
+    // Salva cores originais dos eixos e aplica preto para exportação limpa
+    const escalaX   = chartObj?.options?.scales?.x;
+    const escalaY   = chartObj?.options?.scales?.y;
+    const datalabels = chartObj?.options?.plugins?.datalabels;
+    const origXColor  = escalaX?.ticks?.color;
+    const origYColor  = escalaY?.ticks?.color;
+    const origDLColor = datalabels?.color;
+
+    if (escalaX?.ticks)  escalaX.ticks.color   = '#000';
+    if (escalaY?.ticks)  escalaY.ticks.color   = '#000';
+    if (datalabels)      datalabels.color       = '#000';
+    if (chartObj) chartObj.update('none');
+
+    // Monta o status ativo para exibir no rodapé da imagem
+    const statusAtivo = document.querySelector('#geo-btn-todas.ativo')      ? 'Todas as obras'
+                      : document.querySelector('#geo-btn-ativas.ativo')     ? 'Em Andamento'
+                      : document.querySelector('#geo-btn-pausadas.ativo')   ? 'Pausadas'
+                      : 'Concluídas';
+
+    // Cria canvas temporário com cabeçalho
+    const padding = 16, headerH = 88;
+    const dataFormatada = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const tmp = document.createElement('canvas');
+    tmp.width  = canvas.width + padding * 2;
+    tmp.height = canvas.height + headerH + padding;
+    const ctx  = tmp.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tmp.width, tmp.height);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Cobertura Geográfica — ' + titulo, padding, 26);
+    ctx.fillStyle = '#555555';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Filtro: ' + statusAtivo, padding, 46);
+    ctx.fillText('Data: ' + dataFormatada, padding, 64);
+    ctx.drawImage(canvas, padding, headerH);
+
+    // Restaura cores originais
+    if (escalaX?.ticks)  escalaX.ticks.color   = origXColor;
+    if (escalaY?.ticks)  escalaY.ticks.color   = origYColor;
+    if (datalabels)      datalabels.color       = origDLColor;
+    if (chartObj) chartObj.update('none');
+
+    // Dispara o download
+    const link = document.createElement('a');
+    link.download = `${nome}_${toLocalISO(new Date())}.png`;
+    link.href = tmp.toDataURL('image/png');
+    link.click();
+  }
+
+  function exportarGraficoGeoCombinado() {
+    const canvasEst = document.getElementById('chart-geo-estados');
+    const canvasCid = document.getElementById('chart-geo-cidades');
+    if (!canvasEst || !canvasCid) return;
+
+    // Salva e aplica cores pretas em ambos os gráficos para exportação limpa
+    const charts = [
+      { obj: chartGeoEstados, canvas: canvasEst },
+      { obj: chartGeoCidades, canvas: canvasCid }
+    ];
+    const orig = charts.map(({ obj }) => {
+      const escX = obj?.options?.scales?.x;
+      const escY = obj?.options?.scales?.y;
+      const dl   = obj?.options?.plugins?.datalabels;
+      const bkp  = { xColor: escX?.ticks?.color, yColor: escY?.ticks?.color, dlColor: dl?.color };
+      if (escX?.ticks) escX.ticks.color = '#000';
+      if (escY?.ticks) escY.ticks.color = '#000';
+      if (dl)          dl.color         = '#000';
+      if (obj) obj.update('none');
+      return bkp;
+    });
+
+    // Status ativo para o cabeçalho
+    const statusAtivo = document.querySelector('#geo-btn-todas.ativo')    ? 'Todas as obras'
+                      : document.querySelector('#geo-btn-ativas.ativo')   ? 'Em Andamento'
+                      : document.querySelector('#geo-btn-pausadas.ativo') ? 'Pausadas'
+                      : 'Concluídas';
+
+    // Dimensões: os dois gráficos lado a lado
+    const padding = 16, headerH = 88, gap = 16;
+    const dataFormatada = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const w = canvasEst.width + canvasCid.width + gap + padding * 2;
+    const h = Math.max(canvasEst.height, canvasCid.height) + headerH + padding;
+
+    const tmp = document.createElement('canvas');
+    tmp.width  = w;
+    tmp.height = h;
+    const ctx  = tmp.getContext('2d');
+
+    // Fundo branco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    // Cabeçalho
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Cobertura Geográfica', padding, 26);
+    ctx.fillStyle = '#555555';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Filtro: ' + statusAtivo, padding, 46);
+    ctx.fillText('Data: ' + dataFormatada, padding, 64);
+
+    // Subtítulos dos gráficos
+    ctx.fillStyle = '#333333';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText('Por Estado', padding, headerH - 6);
+    ctx.fillText('Por Cidade', padding + canvasEst.width + gap, headerH - 6);
+
+    // Desenha os dois gráficos lado a lado
+    ctx.drawImage(canvasEst, padding,                           headerH);
+    ctx.drawImage(canvasCid, padding + canvasEst.width + gap,   headerH);
+
+    // Restaura cores originais
+    charts.forEach(({ obj }, i) => {
+      const escX = obj?.options?.scales?.x;
+      const escY = obj?.options?.scales?.y;
+      const dl   = obj?.options?.plugins?.datalabels;
+      if (escX?.ticks) escX.ticks.color = orig[i].xColor;
+      if (escY?.ticks) escY.ticks.color = orig[i].yColor;
+      if (dl)          dl.color         = orig[i].dlColor;
+      if (obj) obj.update('none');
+    });
+
+    // Dispara o download
+    const link = document.createElement('a');
+    link.download = `cobertura_geografica_${toLocalISO(new Date())}.png`;
+    link.href = tmp.toDataURL('image/png');
+    link.click();
+  }
+
   function limparFiltroDisciplinas() {
-    // Remove ativo dos botões rápidos
-    document.querySelectorAll('.btn-periodo[onclick^="filtroDisc"]').forEach(b => b.classList.remove('ativo'));
     // Reseta label do botão Mensal
     document.getElementById('disc-btn-mensal').textContent = 'Mensal';
     document.getElementById('disc-mes-picker').value = '';
-    // Limpa as datas
-    document.getElementById('disc-de').value  = '';
-    document.getElementById('disc-ate').value = '';
-    // Roda o gráfico com todos os dados (sem filtro de data)
+    // Define o período como 1º dia do mês vigente até hoje
+    const hoje         = toLocalISO(new Date());
+    const primeiroDiaMes = hoje.slice(0, 7) + '-01';
+    document.getElementById('disc-de').value  = primeiroDiaMes;
+    document.getElementById('disc-ate').value = hoje;
+    // Roda o gráfico com o período padrão
     aplicarFiltroDisciplinas();
   }
 
@@ -3562,6 +4042,7 @@
     document.getElementById('inp-obra-area').value           = '';
     document.getElementById('inp-obra-codigo').value         = '';
     document.getElementById('inp-obra-sigla').value          = '';
+    document.getElementById('inp-obra-estado').value         = '';
     document.getElementById('inp-obra-recurso').value        = '';
     document.getElementById('inp-obra-valor').value          = '';
     document.getElementById('inp-obra-resp-tecnicos').value  = '';
@@ -3637,7 +4118,8 @@
         ['Prioridade',         (priIcon[o.prioridade]||'') + ' ' + (o.prioridade||'')],
         ['Código do Projeto',  o.codigo_projeto],
         ['Área',               o.area],
-        ['Sigla da Cidade',    o.sigla_cidade],
+        ['Cidade',             o.sigla_cidade],
+        ['Estado',             o.cliente_estado],
         ['Recurso Financeiro', o.recurso_financeiro],
         ['Valor da Obra',      o.valor_obra],
         ['Responsáveis',       o.responsaveis],
@@ -3675,6 +4157,7 @@
     document.getElementById('inp-obra-area').value           = (o && o.area)                  || '';
     document.getElementById('inp-obra-codigo').value         = (o && o.codigo_projeto)        || '';
     document.getElementById('inp-obra-sigla').value          = (o && o.sigla_cidade)          || '';
+    document.getElementById('inp-obra-estado').value         = (o && o.cliente_estado)        || '';
     document.getElementById('inp-obra-recurso').value        = (o && o.recurso_financeiro)    || '';
     document.getElementById('inp-obra-valor').value          = (o && o.valor_obra)            || '';
     document.getElementById('inp-obra-resp-tecnicos').value  = (o && o.responsaveis_tecnicos) || '';
@@ -3701,7 +4184,8 @@
     const cliente_email         = document.getElementById('inp-obra-email').value.trim()         || null;
     const area                  = document.getElementById('inp-obra-area').value.trim()          || null;
     const codigo_projeto        = document.getElementById('inp-obra-codigo').value.trim()        || null;
-    const sigla_cidade          = document.getElementById('inp-obra-sigla').value.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || null;
+    const sigla_cidade          = document.getElementById('inp-obra-sigla').value.trim() || null;
+    const cliente_estado        = document.getElementById('inp-obra-estado').value.trim() || null;
     const recurso_financeiro    = document.getElementById('inp-obra-recurso').value.trim()       || null;
     const valor_obra            = document.getElementById('inp-obra-valor').value.trim()         || null;
     const responsaveis_tecnicos = document.getElementById('inp-obra-resp-tecnicos').value.trim() || null;
@@ -3717,7 +4201,7 @@
     const payload = { nome, status, prioridade, responsaveis: responsaveis || null,
       data_inicio, data_fim, oculto,
       cliente_endereco, cliente_cnpj, cliente_telefone, cliente_email,
-      area, codigo_projeto, sigla_cidade, recurso_financeiro, valor_obra, responsaveis_tecnicos,
+      area, codigo_projeto, sigla_cidade, cliente_estado, recurso_financeiro, valor_obra, responsaveis_tecnicos,
       contrato_info, escopo, historico, tipo_obra };
 
     let error;
@@ -4158,7 +4642,13 @@
   }
 
   function limparFiltros() {
-    ['filtro-de','filtro-ate','filtro-colab','filtro-obra'].forEach(id => document.getElementById(id).value = '');
+    // Ao limpar, define o período como 1º dia do mês vigente até hoje
+    const hoje         = toLocalISO(new Date());
+    const primeiroDiaMes = hoje.slice(0, 7) + '-01';
+    document.getElementById('filtro-de').value  = primeiroDiaMes;
+    document.getElementById('filtro-ate').value = hoje;
+    document.getElementById('filtro-colab').value = '';
+    document.getElementById('filtro-obra').value  = '';
     document.querySelectorAll('.btn-periodo').forEach(b => b.classList.remove('ativo'));
     renderTabela();
   }

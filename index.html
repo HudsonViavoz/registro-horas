@@ -1147,6 +1147,7 @@
       <div class="tab" onclick="trocarAba('por-colaborador', this)">Por Colaborador</div>
       <div class="tab" onclick="trocarAba('por-obra', this)">Por Obra</div>
       <div class="tab" id="tab-obras-admin" style="display:none;" onclick="trocarAba('obras-admin', this)">Obras</div>
+      <div class="tab" id="tab-dashboard" style="display:none;" onclick="trocarAba('dashboard', this)">📊 Dashboard</div>
       <!-- aba admin inserida dinamicamente -->
     </div>
 
@@ -1468,6 +1469,60 @@
 
       <div id="grid-obras-admin"></div>
     </div>
+    <!-- PAINEL: DASHBOARD -->
+    <div id="panel-dashboard" class="panel">
+      <!-- Evolução Mensal -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Evolução Mensal de Horas (desde Jan/2026)</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-mensal','evolucao_mensal')">↓ PNG</button></div>
+        <canvas id="chart-mensal" height="120"></canvas>
+      </div>
+      <!-- Ranking por Disciplina -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Horas por Disciplina</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-disciplinas','horas_disciplina')">↓ PNG</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-periodo" onclick="filtroDiscRapido('tudo',this)">Tudo</button>
+            <div style="position:relative;display:inline-flex;align-items:center;">
+              <button class="btn-periodo" id="disc-btn-mensal" onclick="document.getElementById('disc-mes-picker').showPicker ? document.getElementById('disc-mes-picker').showPicker() : document.getElementById('disc-mes-picker').click()">Mensal</button>
+              <input type="month" id="disc-mes-picker"
+                style="position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;"
+                onchange="filtroDiscMes(this.value)" />
+            </div>
+            <span style="font-size:11px;color:var(--muted);">|</span>
+            <input type="date" id="disc-de" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <span style="font-size:11px;color:var(--muted);">até</span>
+            <input type="date" id="disc-ate" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="limparFiltroDisciplinas()">Limpar</button>
+            <button class="btn-add" style="height:26px;font-size:11px;padding:0 10px;" onclick="aplicarFiltroDisciplinas()">Filtrar</button>
+          </div>
+        </div>
+        <canvas id="chart-disciplinas"></canvas>
+      </div>
+
+      <!-- Ranking por Setor -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Horas por Setor</div><button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGrafico('chart-setor','horas_setor')">↓ PNG</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-periodo" onclick="filtroSetorRapido('tudo',this)">Tudo</button>
+            <div style="position:relative;display:inline-flex;align-items:center;">
+              <button class="btn-periodo" id="setor-btn-mensal" onclick="document.getElementById('setor-mes-picker').showPicker ? document.getElementById('setor-mes-picker').showPicker() : document.getElementById('setor-mes-picker').click()">Mensal</button>
+              <input type="month" id="setor-mes-picker"
+                style="position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;"
+                onchange="filtroSetorMes(this.value)" />
+            </div>
+            <span style="font-size:11px;color:var(--muted);">|</span>
+            <input type="date" id="setor-de" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <span style="font-size:11px;color:var(--muted);">até</span>
+            <input type="date" id="setor-ate" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="limparFiltroSetor()">Limpar</button>
+            <button class="btn-add" style="height:26px;font-size:11px;padding:0 10px;" onclick="aplicarFiltroSetor()">Filtrar</button>
+          </div>
+        </div>
+        <canvas id="chart-setor"></canvas>
+      </div>
+    </div>
+
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
     <div id="panel-admin" class="panel">
 
@@ -1710,6 +1765,9 @@
 
 <!-- SheetJS para exportação Excel com múltiplas abas -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <!-- SDK do Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -1784,6 +1842,8 @@
       if (btnCadObras2) btnCadObras2.style.display = '';
       const tabObrasAdmin = document.getElementById('tab-obras-admin');
       if (tabObrasAdmin) tabObrasAdmin.style.display = '';
+      const tabDash = document.getElementById('tab-dashboard');
+      if (tabDash) tabDash.style.display = '';
       // Esconde só a aba "Todos os Registros" para o admin
       document.querySelectorAll('#tabs-bar .tab').forEach(t => {
         if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'registros'")) {
@@ -2731,6 +2791,7 @@
     if (id === 'admin')            renderAdmin();
     if (id === 'por-obra')         renderPorObra();
     if (id === 'obras-admin')      renderPainelObras();
+    if (id === 'dashboard')        renderDashboard();
     if (id === 'por-colaborador')  renderPorColaborador();
   }
 
@@ -2875,6 +2936,368 @@
       status.textContent = '';
     }, 3000);
   }
+  // ═══════════════════════════════════════════════════
+  // DASHBOARD
+  // ═══════════════════════════════════════════════════
+  let chartMensal     = null;
+  let chartDisciplinas = null;
+  let chartSetor       = null;
+
+  function renderDashboard() {
+    if (!isAdmin || !dadosAdmin.length) return;
+    const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+    const regs = dadosAdmin.filter(r => r.data >= '2026-01-01' && !ESPECIAIS.has(r.obra));
+
+    // Inicializa datas do filtro de disciplinas com o mês atual
+    const hoje = toLocalISO(new Date());
+    const discDe  = document.getElementById('disc-de');
+    const discAte = document.getElementById('disc-ate');
+    if (discDe  && !discDe.value)  discDe.value  = hoje.slice(0,7) + '-01';
+    if (discAte && !discAte.value) discAte.value = hoje;
+
+    renderChartMensal(regs);
+    aplicarFiltroDisciplinas();
+    aplicarFiltroSetor();
+  }
+
+  function filtroDiscRapido(tipo, btn) {
+    document.querySelectorAll('.btn-periodo[onclick^="filtroDisc"]').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    const hoje = toLocalISO(new Date());
+    document.getElementById('disc-de').value  = '2026-01-01';
+    document.getElementById('disc-ate').value = hoje;
+    aplicarFiltroDisciplinas();
+  }
+
+  function filtroDiscMes(mes) {
+    if (!mes) return;
+    document.querySelectorAll('.btn-periodo[onclick^="filtroDisc"]').forEach(b => b.classList.remove('ativo'));
+    const btn = document.getElementById('disc-btn-mensal');
+    btn.classList.add('ativo');
+    // Primeiro e último dia do mês selecionado
+    const [ano, m] = mes.split('-');
+    const ultimo = new Date(parseInt(ano), parseInt(m), 0).getDate();
+    document.getElementById('disc-de').value  = `${mes}-01`;
+    document.getElementById('disc-ate').value = `${mes}-${String(ultimo).padStart(2,'0')}`;
+    btn.textContent = new Date(mes + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.','');
+    aplicarFiltroDisciplinas();
+  }
+
+  function exportarGrafico(canvasId, nome) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    // Pega o objeto Chart para alterar as cores temporariamente
+    const chartObj = canvasId === 'chart-mensal' ? chartMensal
+                   : canvasId === 'chart-disciplinas' ? chartDisciplinas
+                   : chartSetor;
+
+    // Salva cores originais e aplica preto
+    const escalaX = chartObj?.options?.scales?.x;
+    const escalaY = chartObj?.options?.scales?.y;
+    const datalabels = chartObj?.options?.plugins?.datalabels;
+    const origXColor = escalaX?.ticks?.color;
+    const origYColor = escalaY?.ticks?.color;
+    const origDLColor = datalabels?.color;
+
+    if (escalaX?.ticks)    escalaX.ticks.color    = '#000';
+    if (escalaY?.ticks)    escalaY.ticks.color    = '#000';
+    if (datalabels)        datalabels.color       = '#000';
+    if (chartObj) chartObj.update('none');
+
+    // Título e período
+    const titulos = {
+      'chart-mensal':      'Evolução Mensal de Horas',
+      'chart-disciplinas': 'Horas por Disciplina',
+      'chart-setor':       'Horas por Setor'
+    };
+    const titulo = titulos[canvasId] || nome;
+    let periodo = 'Jan/2026 até hoje';
+    if (canvasId === 'chart-disciplinas') {
+      const de = document.getElementById('disc-de')?.value;
+      const ate = document.getElementById('disc-ate')?.value;
+      if (de && ate) periodo = `${formatarData(de)} a ${formatarData(ate)}`;
+    } else if (canvasId === 'chart-setor') {
+      const de = document.getElementById('setor-de')?.value;
+      const ate = document.getElementById('setor-ate')?.value;
+      if (de && ate) periodo = `${formatarData(de)} a ${formatarData(ate)}`;
+    }
+
+    const padding = 16, headerH = 52;
+    const tmp = document.createElement('canvas');
+    tmp.width  = canvas.width + padding * 2;
+    tmp.height = canvas.height + headerH + padding;
+    const ctx  = tmp.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tmp.width, tmp.height);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(titulo, padding, 28);
+    ctx.fillStyle = '#333333';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Período: ' + periodo, padding, 46);
+    ctx.drawImage(canvas, padding, headerH);
+
+    // Restaura cores originais
+    if (escalaX?.ticks)    escalaX.ticks.color    = origXColor;
+    if (escalaY?.ticks)    escalaY.ticks.color    = origYColor;
+    if (datalabels)        datalabels.color       = origDLColor;
+    if (chartObj) chartObj.update('none');
+
+    const link = document.createElement('a');
+    link.download = `${nome}_${toLocalISO(new Date())}.png`;
+    link.href = tmp.toDataURL('image/png');
+    link.click();
+    mostrarToast('Gráfico exportado!');
+  }
+
+  function filtroSetorRapido(tipo, btn) {
+    document.querySelectorAll('.btn-periodo[onclick^="filtroSetor"]').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    const hoje = toLocalISO(new Date());
+    document.getElementById('setor-de').value  = '2026-01-01';
+    document.getElementById('setor-ate').value = hoje;
+    aplicarFiltroSetor();
+  }
+
+  function filtroSetorMes(mes) {
+    if (!mes) return;
+    document.querySelectorAll('.btn-periodo[onclick^="filtroSetor"]').forEach(b => b.classList.remove('ativo'));
+    const btn = document.getElementById('setor-btn-mensal');
+    btn.classList.add('ativo');
+    const [ano, m] = mes.split('-');
+    const ultimo = new Date(parseInt(ano), parseInt(m), 0).getDate();
+    document.getElementById('setor-de').value  = `${mes}-01`;
+    document.getElementById('setor-ate').value = `${mes}-${String(ultimo).padStart(2,'0')}`;
+    btn.textContent = new Date(mes + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.','');
+    aplicarFiltroSetor();
+  }
+
+  function limparFiltroSetor() {
+    document.querySelectorAll('.btn-periodo[onclick^="filtroSetor"]').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('setor-btn-mensal').textContent = 'Mensal';
+    document.getElementById('setor-mes-picker').value = '';
+    document.getElementById('setor-de').value  = '';
+    document.getElementById('setor-ate').value = '';
+    aplicarFiltroSetor();
+  }
+
+  function aplicarFiltroSetor() {
+    const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+    const de  = document.getElementById('setor-de')?.value  || '2026-01-01';
+    const ate = document.getElementById('setor-ate')?.value || toLocalISO(new Date());
+    const regs = dadosAdmin.filter(r => r.data >= de && r.data <= ate && !ESPECIAIS.has(r.obra));
+    renderChartSetor(regs);
+  }
+
+  function renderChartSetor(regs) {
+    const ctx = document.getElementById('chart-setor');
+    if (!ctx) return;
+    if (chartSetor) chartSetor.destroy();
+
+    const mapa = {};
+    regs.forEach(r => { const s = r.setor || 'SEM SETOR'; mapa[s] = (mapa[s] || 0) + r.horas; });
+    const sorted = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+    const labels = sorted.map(([s]) => s);
+    const values = sorted.map(([,h]) => Math.round(h * 100) / 100);
+
+    ctx.parentElement.style.height = Math.max(160, sorted.length * 44 + 40) + 'px';
+
+    const cores = ['#5b9bd5','#f0a500','#4caf88','#e05a5a','#9b59b6','#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad'];
+
+    Chart.register(ChartDataLabels);
+    chartSetor = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_,i) => cores[i % cores.length] + 'cc'),
+          borderColor:      labels.map((_,i) => cores[i % cores.length]),
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 60 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => '  ' + decimalParaHora(c.raw) + 'h' } },
+          datalabels: {
+            anchor: 'end', align: 'end',
+            color: '#aaa', font: { size: 11, weight: '600' },
+            formatter: v => decimalParaHora(v)
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#888', callback: v => decimalParaHora(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function limparFiltroDisciplinas() {
+    // Remove ativo dos botões rápidos
+    document.querySelectorAll('.btn-periodo[onclick^="filtroDisc"]').forEach(b => b.classList.remove('ativo'));
+    // Reseta label do botão Mensal
+    document.getElementById('disc-btn-mensal').textContent = 'Mensal';
+    document.getElementById('disc-mes-picker').value = '';
+    // Limpa as datas
+    document.getElementById('disc-de').value  = '';
+    document.getElementById('disc-ate').value = '';
+    // Roda o gráfico com todos os dados (sem filtro de data)
+    aplicarFiltroDisciplinas();
+  }
+
+  function aplicarFiltroDisciplinas() {
+    const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+    const de  = document.getElementById('disc-de')?.value  || '2026-01-01';
+    const ate = document.getElementById('disc-ate')?.value || toLocalISO(new Date());
+    const regs = dadosAdmin.filter(r => r.data >= de && r.data <= ate && !ESPECIAIS.has(r.obra));
+    renderChartDisciplinas(regs);
+  }
+
+  function renderChartMensal(regs) {
+    const mapa = {};
+    regs.forEach(r => { const m = r.data.slice(0,7); mapa[m] = (mapa[m] || 0) + r.horas; });
+
+    // Gera todos os meses de 2026-01 até o mês atual
+    const hoje = toLocalISO(new Date());
+    const meses = [];
+    let cur = new Date('2026-01-01T12:00:00');
+    const fim = new Date(hoje.slice(0,7) + '-01T12:00:00');
+    while (cur <= fim) {
+      meses.push(toLocalISO(cur).slice(0,7));
+      cur.setMonth(cur.getMonth() + 1);
+    }
+
+    const nomeMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const labels  = meses.map(m => { const [y,mo] = m.split('-'); return nomeMes[parseInt(mo)-1]+'/'+y.slice(2); });
+    const values  = meses.map(m => Math.round((mapa[m] || 0) * 100) / 100);
+
+    const ctx = document.getElementById('chart-mensal');
+    if (!ctx) return;
+    if (chartMensal) chartMensal.destroy();
+    Chart.register(ChartDataLabels);
+
+    chartMensal = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: 'rgba(240,165,0,1)',
+          backgroundColor: 'rgba(240,165,0,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(240,165,0,1)',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: true,
+          tension: 0.3,
+          datalabels: {
+            display: true
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => '  ' + decimalParaHora(c.raw) + 'h' } },
+          datalabels: {
+            color: '#f0a500',
+            anchor: 'end',
+            align: 'top',
+            offset: 4,
+            font: { size: 11, weight: '600' },
+            formatter: v => v > 0 ? decimalParaHora(v) : ''
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#888', callback: v => decimalParaHora(v) },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          }
+        },
+        layout: { padding: { top: 24 } }
+      }
+    });
+  }
+
+  function renderChartDisciplinas(regs) {
+    const ctx = document.getElementById('chart-disciplinas');
+    if (!ctx) return;
+    if (chartDisciplinas) chartDisciplinas.destroy();
+
+    // Agrupa horas por disciplina
+    const mapa = {};
+    regs.forEach(r => {
+      const d = r.disciplina || 'SEM DISCIPLINA';
+      mapa[d] = (mapa[d] || 0) + r.horas;
+    });
+    const sorted = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+    const labels = sorted.map(([d]) => d);
+    const values = sorted.map(([,h]) => Math.round(h * 100) / 100);
+
+    // Altura dinâmica baseada no número de disciplinas
+    ctx.parentElement.style.height = Math.max(200, sorted.length * 44 + 40) + 'px';
+
+    const cores = [
+      '#f0a500','#5b9bd5','#4caf88','#e05a5a','#9b59b6',
+      '#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad',
+      '#27ae60','#2980b9','#c0392b','#16a085','#d35400'
+    ];
+
+    Chart.register(ChartDataLabels);
+    chartDisciplinas = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_,i) => cores[i % cores.length] + 'cc'),
+          borderColor:      labels.map((_,i) => cores[i % cores.length]),
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 60 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => '  ' + decimalParaHora(c.raw) + 'h' } },
+          datalabels: {
+            anchor: 'end',
+            align: 'end',
+            color: '#aaa',
+            font: { size: 11, weight: '600' },
+            formatter: v => decimalParaHora(v)
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#888', callback: v => decimalParaHora(v) },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          y: {
+            ticks: { color: '#ccc', font: { size: 11 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
   function toggleListaAtraso() {
     const lista = document.getElementById('alertas-atraso-lista');
     const btn   = document.getElementById('btn-toggle-atraso');

@@ -1204,9 +1204,9 @@
       <!-- Filtros de status (só para admin) -->
       <div id="obra-status-filtros" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
         <button class="btn-status-obra ativo" onclick="filtrarStatusObra('TODAS',this)">Todas</button>
-        <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🟢 Em andamento</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('EM ANDAMENTO',this)">🔵 Em andamento</button>
         <button class="btn-status-obra" onclick="filtrarStatusObra('PAUSADA',this)">🟡 Pausadas</button>
-        <button class="btn-status-obra" onclick="filtrarStatusObra('CONCLUIDA',this)">✅ Concluídas</button>
+        <button class="btn-status-obra" onclick="filtrarStatusObra('CONCLUIDA',this)">🟢 Concluídas</button>
       </div>
       <div class="busca-cards">
         <input type="text" id="busca-obra" placeholder="Buscar obra / projeto..." autocomplete="off"
@@ -1300,9 +1300,9 @@
           <div class="field">
             <label>Status</label>
             <select id="inp-obra-status" class="field-select">
-              <option value="EM ANDAMENTO">🟢 Em andamento</option>
+              <option value="EM ANDAMENTO">🔵 Em andamento</option>
               <option value="PAUSADA">🟡 Pausada</option>
-              <option value="CONCLUIDA">✅ Concluída</option>
+              <option value="CONCLUIDA">🟢 Concluída</option>
             </select>
           </div>
           <!-- Prioridade -->
@@ -2717,7 +2717,7 @@
     const maxHoras = normais.length > 0 ? normais[0][1].horas : 1;
     const totalG   = normais.reduce((s, [,v]) => s + v.horas, 0);
 
-    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
     const statusOpts = ['EM ANDAMENTO','PAUSADA','CONCLUIDA'];
 
     grid.innerHTML = lista.length === 0
@@ -2807,7 +2807,7 @@
   }
 
   function renderDadosObra(o) {
-    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
     const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
 
     const secao = (titulo, campos) => {
@@ -3833,38 +3833,51 @@
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
-    // Lista todos os colaboradores únicos que já têm registros
-    const colaboradores = [...new Set(dadosAdmin.map(r => r.colaborador))].filter(Boolean).sort();
+    // Tenta buscar todos os perfis cadastrados; se falhar, usa só quem tem registros
+    const { data: todosOsPerfis } = await sb.from('profiles').select('id,nome,created_at').order('nome');
+    const usarPerfis = todosOsPerfis && todosOsPerfis.length > 0;
 
-    if (colaboradores.length === 0) { card.style.display = 'none'; return; }
+    // Monta a lista de colaboradores a verificar
+    let colaboradoresBase;
+    if (usarPerfis) {
+      colaboradoresBase = todosOsPerfis.filter(p => p.nome);
+    } else {
+      // Fallback: só quem tem registros
+      const nomes = [...new Set(dadosAdmin.map(r => r.colaborador))].filter(Boolean).sort();
+      colaboradoresBase = nomes.map(n => ({ nome: n, created_at: null }));
+    }
+
+    if (colaboradoresBase.length === 0) { card.style.display = 'none'; return; }
 
     const alertas = [];
 
-    for (const nome of colaboradores) {
-      // Pega o registro mais antigo para saber desde quando o colaborador usa o sistema
+    for (const perfil of colaboradoresBase) {
+      const nome = perfil.nome;
       const registrosColab = dadosAdmin.filter(r => r.colaborador === nome);
-      const primeiroRegistro = registrosColab.map(r => r.data).sort()[0];
-      if (!primeiroRegistro) continue;
+
+      // Define data de referência: primeiro registro ou data de criação do perfil
+      let primeiroRegistro;
+      if (registrosColab.length > 0) {
+        primeiroRegistro = registrosColab.map(r => r.data).sort()[0];
+      } else if (perfil.created_at) {
+        primeiroRegistro = toLocalISO(new Date(perfil.created_at));
+      } else {
+        continue; // sem referência, pula
+      }
 
       const diasFalta = [];
       for (let i = 1; i <= 14; i++) {
         const d = new Date(hoje);
         d.setDate(hoje.getDate() - i);
-
-        // Não cobra antes do primeiro registro
         if (toLocalISO(d) < primeiroRegistro) continue;
-
         const dow = d.getDay();
         if (dow === 0 || dow === 6) continue;
-
         const iso = toLocalISO(d);
-        if (!registrosColab.some(r => r.data === iso)) {
-          diasFalta.push(iso);
-        }
+        if (!registrosColab.some(r => r.data === iso)) diasFalta.push(iso);
       }
 
       if (diasFalta.length > 0) {
-        alertas.push({ nome, dias: diasFalta.length });
+        alertas.push({ nome, dias: diasFalta.length, semLancamento: registrosColab.length === 0 });
       }
     }
 
@@ -3872,12 +3885,10 @@
 
     alertas.sort((a, b) => b.dias - a.dias);
 
-    // Busca user_ids para envio de mensagens
-    const { data: perfisAtraso } = await sb.from('profiles').select('id,nome').in('nome', colaboradores);
+    // Mapa de user_ids para envio de mensagens
     const mapaIds = {};
-    (perfisAtraso || []).forEach(p => { mapaIds[p.nome] = p.id; });
+    (todosOsPerfis || []).forEach(p => { if (p.nome) mapaIds[p.nome] = p.id; });
     alertasAtrasoUsers = alertas.filter(a => mapaIds[a.nome]).map(a => ({ user_id: mapaIds[a.nome], nome: a.nome }));
-
 
     document.getElementById('alertas-atraso-total').textContent =
       alertas.length + ' colaborador(es) com atraso';
@@ -3885,7 +3896,7 @@
     document.getElementById('alertas-atraso-lista').innerHTML = alertas.map(a => `
       <div style="display:flex;align-items:center;justify-content:space-between;
         background:var(--bg3);border-radius:var(--radius);padding:7px 12px;">
-        <span style="font-size:13px;color:var(--text);">👤 ${escapeHTML(a.nome)}</span>
+        <span style="font-size:13px;color:var(--text);">👤 ${escapeHTML(a.nome)}${a.semLancamento ? ' <span style="font-size:10px;color:var(--muted);background:var(--bg2);padding:2px 6px;border-radius:4px;margin-left:6px;">Sem lançamentos</span>' : ''}</span>
         <span style="font-size:12px;color:var(--danger);font-weight:600;">
           ${a.dias} dia${a.dias > 1 ? 's' : ''} em atraso
         </span>
@@ -4004,7 +4015,7 @@
             ${o.oculto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(oculto)</span>' : ''}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;">
-            ${o.status ? `<span style="font-size:10px;color:var(--muted);">${o.status==='EM ANDAMENTO'?'🟢':o.status==='PAUSADA'?'🟡':'✅'} ${o.status}</span>` : ''}
+            ${o.status ? `<span style="font-size:10px;color:var(--muted);">${o.status==='EM ANDAMENTO'?'🔵':o.status==='PAUSADA'?'🟡':'🟢'} ${o.status}</span>` : ''}
             ${o.prioridade && o.prioridade!=='NORMAL' ? `<span style="font-size:10px;color:var(--muted);">${o.prioridade==='ALTA'?'🟠':o.prioridade==='URGENTE'?'🔴':'🔵'} ${o.prioridade}</span>` : ''}
             ${o.data_inicio ? `<span style="font-size:10px;color:var(--muted);">📅 ${formatarData(o.data_inicio)}${o.data_fim?' → '+formatarData(o.data_fim):''}</span>` : ''}
             ${o.responsaveis ? `<span style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;max-width:150px;white-space:nowrap;">👤 ${escapeHTML(o.responsaveis)}</span>` : ''}
@@ -4094,7 +4105,7 @@
     document.getElementById('viz-obra-conteudo').innerHTML =
       document.getElementById('painel-dados-obra')?.innerHTML || '';
     // Renderiza direto no modal
-    const statusIcon = { 'EM ANDAMENTO': '🟢', 'PAUSADA': '🟡', 'CONCLUIDA': '✅' };
+    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
     const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
     const secao = (titulo, campos) => {
       const itens = campos.filter(([,v]) => v).map(([l,v]) => {
@@ -4265,6 +4276,53 @@
     if (e.target.id === 'inp-obra-responsaveis')
       setTimeout(() => { const b = document.getElementById('obra-resp-autocomplete'); if(b) b.style.display='none'; }, 150);
   }, true);
+
+  // ── Autocomplete @menção no campo Participantes (reserva de salas) ──
+  let resPartAutoIdx = -1;
+
+  document.addEventListener('input', function(e) {
+    if (e.target.id !== 'res-participantes') return;
+    const val = e.target.value, pos = e.target.selectionStart;
+    const atPos = val.lastIndexOf('@', pos - 1);
+    const box = document.getElementById('res-autocomplete');
+    if (atPos === -1) { box.style.display = 'none'; return; }
+    const termo = val.slice(atPos + 1, pos).toLowerCase();
+    const filt  = todosPerfis.filter(p => p.nome && p.nome.toLowerCase().includes(termo));
+    if (!filt.length) { box.style.display = 'none'; return; }
+    resPartAutoIdx = -1;
+    box.style.display = 'block';
+    box.innerHTML = filt.map(p =>
+      `<div class="chat-autocomplete-item" data-nome="${escapeHTML(p.nome)}" data-at="${atPos}"
+        onmousedown="selecionarResPart(this)">${escapeHTML(p.nome)}</div>`
+    ).join('');
+  });
+
+  function selecionarResPart(el) {
+    const nome  = el.dataset.nome;
+    const atPos = parseInt(el.dataset.at);
+    const inp   = document.getElementById('res-participantes');
+    const pos   = inp.selectionStart;
+    inp.value   = inp.value.slice(0, atPos) + '@' + nome + ' ' + inp.value.slice(pos);
+    inp.focus();
+    document.getElementById('res-autocomplete').style.display = 'none';
+  }
+
+  // Fecha ao perder o foco e navega com setas
+  document.addEventListener('blur', function(e) {
+    if (e.target.id === 'res-participantes')
+      setTimeout(() => { const b = document.getElementById('res-autocomplete'); if(b) b.style.display='none'; }, 150);
+  }, true);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.target.id !== 'res-participantes') return;
+    const box   = document.getElementById('res-autocomplete');
+    const items = box.querySelectorAll('.chat-autocomplete-item');
+    if (box.style.display === 'none') return;
+    if (e.key === 'Escape') { box.style.display = 'none'; return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); resPartAutoIdx = Math.min(resPartAutoIdx+1, items.length-1); items.forEach((it,i) => it.classList.toggle('ativo', i===resPartAutoIdx)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); resPartAutoIdx = Math.max(resPartAutoIdx-1, 0); items.forEach((it,i) => it.classList.toggle('ativo', i===resPartAutoIdx)); }
+    if (e.key === 'Enter' && resPartAutoIdx >= 0) { e.preventDefault(); selecionarResPart(items[resPartAutoIdx]); }
+  });
 
   // Máscara CNPJ — 00.000.000/0000-00
   document.getElementById('inp-obra-cnpj').addEventListener('input', function() {

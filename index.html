@@ -993,21 +993,6 @@
           <label for="d-setor">Setor</label>
           <select id="d-setor" class="field-select">
             <option value="">Selecione o setor...</option>
-            <option>CIVIL 1</option>
-            <option>CIVIL 2</option>
-            <option>CIVIL 4</option>
-            <option>COMPATIBILIZAÇÃO</option>
-            <option>COORDENAÇÃO</option>
-            <option>DRENAGEM</option>
-            <option>DRONE/TOPOGRAFIA</option>
-            <option>ELÉTRICA</option>
-            <option>ESTRUTURAL</option>
-            <option>HIDRO</option>
-            <option>INFRAESTRUTURA</option>
-            <option>MEIO AMBIENTE</option>
-            <option>ORÇAMENTO</option>
-            <option>REURB</option>
-            <option>SANEAMENTO</option>
           </select>
         </div>
         <div class="field">
@@ -1085,33 +1070,6 @@
           <label>Disciplina</label>
           <select id="inp-disciplina" class="field-select">
             <option value="">Selecione...</option>
-            <option>ARQUITETURA</option>
-            <option>AUTOMAÇÃO</option>
-            <option>CABEAMENTO ESTRUTURADO</option>
-            <option>CFTV</option>
-            <option>CLIMATIZAÇÃO</option>
-            <option>DRENAGEM</option>
-            <option>ELÉTRICO</option>
-            <option>ESTRUTURA DE CONCRETO</option>
-            <option>ESTRUTURA METÁLICA</option>
-            <option>GEOMETRIA</option>
-            <option>HIDROSSANITÁRIO</option>
-            <option>INCÊNDIO</option>
-            <option>LUMINOTÉCNICO</option>
-            <option>MEIO AMBIENTE</option>
-            <option>ORÇAMENTO</option>
-            <option>PAISAGISMO</option>
-            <option>PAVIMENTAÇÃO</option>
-            <option>REURB</option>
-            <option>REUNIAO</option>
-            <option>SANEAMENTO</option>
-            <option>SANEAMENTO COPASA</option>
-            <option>SINALIZAÇÃO</option>
-            <option>SPDA</option>
-            <option>TERRAPLANAGEM</option>
-            <option>TOPOGRAFIA</option>
-            <option>URBANISMO</option>
-            <option>OUTRA</option>
           </select>
         </div>
         <div class="field">
@@ -1609,6 +1567,44 @@
       </div>
     </div>
 
+    <!-- PAINEL: CADASTROS (admin) -->
+    <div id="panel-cadastros" class="panel">
+      <div style="max-width:860px;margin:0 auto;padding:1rem 0;">
+
+        <!-- Título -->
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:1.5rem;">⚙️ Cadastros</div>
+
+        <!-- Grid duas colunas: Disciplinas | Setores -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+          <!-- ── DISCIPLINAS ── -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;">
+            <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">📋 Disciplinas</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <input type="text" id="inp-nova-disciplina" placeholder="Nova disciplina..."
+                style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
+                onkeydown="if(event.key==='Enter') adicionarCadastro('disciplina')" />
+              <button class="btn-add" style="height:36px;padding:0 14px;font-size:12px;" onclick="adicionarCadastro('disciplina')">+ Adicionar</button>
+            </div>
+            <div id="lista-cadastro-disciplinas" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+          </div>
+
+          <!-- ── SETORES ── -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;">
+            <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">🏢 Setores</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <input type="text" id="inp-novo-setor" placeholder="Novo setor..."
+                style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;text-transform:uppercase;"
+                onkeydown="if(event.key==='Enter') adicionarCadastro('setor')" />
+              <button class="btn-add" style="height:36px;padding:0 14px;font-size:12px;" onclick="adicionarCadastro('setor')">+ Adicionar</button>
+            </div>
+            <div id="lista-cadastro-setores" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- PAINEL: ADMIN (inserido dinamicamente) -->
     <div id="panel-admin" class="panel">
 
@@ -1939,6 +1935,14 @@
         }
       });
 
+      // Adiciona aba Cadastros
+      const tCad = document.createElement('div');
+      tCad.id          = 'tab-cadastros';
+      tCad.className   = 'tab admin';
+      tCad.textContent = '⚙️ Cadastros';
+      tCad.onclick     = function() { trocarAba('cadastros', this); };
+      document.getElementById('tabs-bar').appendChild(tCad);
+
       // Adiciona aba Admin
       const t = document.createElement('div');
       t.id          = 'tab-admin';
@@ -1957,7 +1961,7 @@
       });
       carregarObrasDB();
       carregarCategoriasDB();
-      document.getElementById('followup-card').style.display  = 'none';
+      carregarCadastros();
       document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
@@ -1987,7 +1991,7 @@
         this.setAttribute('readonly','');
       });
       cronoRestaurar();
-      setTimeout(() => { carregarObrasDB(); carregarCategoriasDB(); }, 500);
+      setTimeout(() => { carregarObrasDB(); carregarCategoriasDB(); carregarCadastros(); }, 500);
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -2880,6 +2884,7 @@
     if (id === 'obras-admin')      renderPainelObras();
     if (id === 'dashboard')        renderDashboard();
     if (id === 'por-colaborador')  renderPorColaborador();
+    if (id === 'cadastros')        renderPainelCadastros();
   }
 
   const ADM_POR_PAG = 25;
@@ -4439,6 +4444,135 @@
 
   // Antigas funções do modal inline (mantém compatibilidade)
   function abrirCadastroObras() { trocarAba('obras-admin', document.getElementById('tab-obras-admin')); }
+
+  // ═══════════════════════════════════════════════════
+  // CADASTROS: DISCIPLINAS E SETORES
+  // ═══════════════════════════════════════════════════
+
+  // Cache local para não buscar repetidamente
+  let cacheDisciplinas = [];
+  let cacheSetores     = [];
+
+  async function carregarCadastros() {
+    // Busca disciplinas e setores ativos do banco e preenche os selects do formulário
+    const [{ data: discs }, { data: sets }] = await Promise.all([
+      sb.from('disciplinas').select('id,nome').eq('ativo', true).order('nome'),
+      sb.from('setores').select('id,nome').eq('ativo', true).order('nome'),
+    ]);
+
+    cacheDisciplinas = discs || [];
+    cacheSetores     = sets  || [];
+
+    // Preenche o select de disciplina no formulário de lançamento
+    const selDisc = document.getElementById('inp-disciplina');
+    if (selDisc) {
+      selDisc.innerHTML = '<option value="">Selecione...</option>'
+        + cacheDisciplinas.map(d => `<option>${escapeHTML(d.nome)}</option>`).join('');
+    }
+
+    // Preenche o select de setor no perfil do colaborador
+    const selSetor = document.getElementById('d-setor');
+    if (selSetor) {
+      selSetor.innerHTML = '<option value="">Selecione o setor...</option>'
+        + cacheSetores.map(s => `<option>${escapeHTML(s.nome)}</option>`).join('');
+    }
+  }
+
+  async function renderPainelCadastros() {
+    // Carrega dados frescos do banco antes de renderizar
+    await carregarCadastros();
+    renderListaCadastro('disciplina');
+    renderListaCadastro('setor');
+  }
+
+  function renderListaCadastro(tipo) {
+    // Renderiza a lista de itens cadastrados com botão de excluir
+    const lista = tipo === 'disciplina' ? cacheDisciplinas : cacheSetores;
+    const elId  = tipo === 'disciplina' ? 'lista-cadastro-disciplinas' : 'lista-cadastro-setores';
+    const el    = document.getElementById(elId);
+    if (!el) return;
+
+    if (!lista.length) {
+      el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:8px;">Nenhum item cadastrado.</div>`;
+      return;
+    }
+
+    el.innerHTML = lista.map(item => `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;">
+        <span style="font-size:13px;color:var(--text);font-weight:500;">${escapeHTML(item.nome)}</span>
+        <button onclick="removerCadastro('${tipo}','${item.id}','${escapeHTML(item.nome).replace(/'/g,"\\'")}') "
+          style="background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1;"
+          title="Remover">✕</button>
+      </div>`).join('');
+  }
+
+  async function adicionarCadastro(tipo) {
+    // Lê o valor do input, valida e insere no banco
+    const inputId = tipo === 'disciplina' ? 'inp-nova-disciplina' : 'inp-novo-setor';
+    const tabela  = tipo === 'disciplina' ? 'disciplinas' : 'setores';
+    const inp     = document.getElementById(inputId);
+    const nome    = (inp?.value || '').trim().toUpperCase();
+
+    if (!nome) { mostrarToast('Digite um nome para adicionar.', 'aviso'); return; }
+
+    // Verifica duplicidade local antes de enviar
+    const cache = tipo === 'disciplina' ? cacheDisciplinas : cacheSetores;
+    if (cache.some(i => i.nome === nome)) {
+      mostrarToast(`"${nome}" já está cadastrado.`, 'aviso');
+      return;
+    }
+
+    mostrarLoading(true);
+    const { data, error } = await sb.from(tabela).insert({ nome, ativo: true }).select().single();
+    mostrarLoading(false);
+
+    if (error) { mostrarToast('Erro ao adicionar.', 'erro'); return; }
+
+    // Atualiza cache local e re-renderiza sem buscar do banco
+    cache.push({ id: data.id, nome: data.nome });
+    cache.sort((a, b) => a.nome.localeCompare(b.nome));
+    inp.value = '';
+    renderListaCadastro(tipo);
+    atualizarSelectsCadastro();
+    mostrarToast(`"${nome}" adicionado com sucesso!`, 'ok');
+  }
+
+  async function removerCadastro(tipo, id, nome) {
+    if (!confirm(`Remover "${nome}"?`)) return;
+    const tabela = tipo === 'disciplina' ? 'disciplinas' : 'setores';
+
+    mostrarLoading(true);
+    const { error } = await sb.from(tabela).update({ ativo: false }).eq('id', id);
+    mostrarLoading(false);
+
+    if (error) { mostrarToast('Erro ao remover.', 'erro'); return; }
+
+    // Remove do cache local
+    if (tipo === 'disciplina') cacheDisciplinas = cacheDisciplinas.filter(i => i.id !== id);
+    else                       cacheSetores     = cacheSetores.filter(i => i.id !== id);
+
+    renderListaCadastro(tipo);
+    atualizarSelectsCadastro();
+    mostrarToast(`"${nome}" removido.`, 'info');
+  }
+
+  function atualizarSelectsCadastro() {
+    // Atualiza os selects do formulário com os caches atuais sem ir ao banco
+    const selDisc = document.getElementById('inp-disciplina');
+    if (selDisc) {
+      const atual = selDisc.value;
+      selDisc.innerHTML = '<option value="">Selecione...</option>'
+        + cacheDisciplinas.map(d => `<option>${escapeHTML(d.nome)}</option>`).join('');
+      selDisc.value = atual;
+    }
+    const selSetor = document.getElementById('d-setor');
+    if (selSetor) {
+      const atual = selSetor.value;
+      selSetor.innerHTML = '<option value="">Selecione o setor...</option>'
+        + cacheSetores.map(s => `<option>${escapeHTML(s.nome)}</option>`).join('');
+      selSetor.value = atual;
+    }
+  }
   function fecharCadastroObras() {}
   function adicionarObra() { salvarObraModal(); }
   function removerObraDB(nome) { const o = obrasCacheAll.find(x=>x.nome===nome); if(o) excluirObraAdmin(o.id, nome); }

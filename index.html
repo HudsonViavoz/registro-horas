@@ -1565,6 +1565,82 @@
         </div>
 
       </div>
+
+      <!-- ── GRÁFICO: PESSOAS POR SETOR ── -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem;margin-top:2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">👥 Pessoas por Setor</div>
+            <span id="pessoas-setor-total" style="font-size:13px;font-weight:700;color:var(--accent);"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-periodo" onclick="filtroPessoasSetorRapido('tudo',this)">Tudo</button>
+            <div style="position:relative;display:inline-flex;align-items:center;">
+              <button class="btn-periodo" id="ps-btn-mensal" onclick="document.getElementById('ps-mes-picker').showPicker ? document.getElementById('ps-mes-picker').showPicker() : document.getElementById('ps-mes-picker').click()">Mensal</button>
+              <input type="month" id="ps-mes-picker" style="position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;" onchange="filtroPessoasSetorMes(this.value)" />
+            </div>
+            <span style="font-size:11px;color:var(--muted);">|</span>
+            <input type="date" id="ps-de"  style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <span style="font-size:11px;color:var(--muted);">até</span>
+            <input type="date" id="ps-ate" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:11px;font-family:var(--font);outline:none;" />
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="limparFiltroPessoasSetor()">Limpar</button>
+            <button class="btn-add"    style="height:26px;font-size:11px;padding:0 10px;" onclick="aplicarFiltroPessoasSetor()">Filtrar</button>
+            <button class="btn-filter" style="height:26px;font-size:11px;padding:0 10px;" onclick="exportarGraficoPessoasSetor()">↓ PNG</button>
+          </div>
+        </div>
+        <canvas id="chart-pessoas-setor"></canvas>
+      </div>
+
+    </div>
+    </div>
+
+    <!-- PAINEL: EMPRESA (admin) -->
+    <div id="panel-empresa" class="panel">
+      <div style="max-width:1100px;margin:0 auto;padding:1rem 0;">
+
+        <!-- Cabeçalho -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:16px;font-weight:700;color:var(--text);">🏢 Colaboradores da Empresa</div>
+            <button class="btn-add" style="height:28px;font-size:11px;padding:0 12px;" onclick="exportarEmpresaExcel()">↓ Excel</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="empresa-busca" placeholder="Buscar colaborador..."
+              style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:12px;font-family:var(--font);outline:none;width:180px;"
+              oninput="filtrarTabelaEmpresa()" />
+            <select id="empresa-filtro-setor"
+              style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:12px;font-family:var(--font);outline:none;"
+              onchange="filtrarTabelaEmpresa()">
+              <option value="">Todos os setores</option>
+            </select>
+            <select id="empresa-filtro-andar"
+              style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:12px;font-family:var(--font);outline:none;"
+              onchange="filtrarTabelaEmpresa()">
+              <option value="">Todos os andares</option>
+            </select>
+            <button class="btn-filter" style="height:28px;font-size:11px;padding:0 12px;" onclick="limparFiltrosEmpresa()">Limpar</button>
+            <span id="empresa-total" style="font-size:12px;color:var(--muted);"></span>
+          </div>
+        </div>
+
+        <!-- Tabela -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:var(--bg3);">
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Nome</th>
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Setor</th>
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Andar</th>
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Líder</th>
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">E-mail</th>
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Ramal</th>
+              </tr>
+            </thead>
+            <tbody id="empresa-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
     </div>
 
     <!-- PAINEL: CADASTROS (admin) -->
@@ -1934,6 +2010,14 @@
           t.style.display = '';
         }
       });
+
+      // Adiciona aba Empresa
+      const tEmp = document.createElement('div');
+      tEmp.id          = 'tab-empresa';
+      tEmp.className   = 'tab admin';
+      tEmp.textContent = '🏢 Empresa';
+      tEmp.onclick     = function() { trocarAba('empresa', this); };
+      document.getElementById('tabs-bar').appendChild(tEmp);
 
       // Adiciona aba Cadastros
       const tCad = document.createElement('div');
@@ -2885,6 +2969,7 @@
     if (id === 'dashboard')        renderDashboard();
     if (id === 'por-colaborador')  renderPorColaborador();
     if (id === 'cadastros')        renderPainelCadastros();
+    if (id === 'empresa')          renderPainelEmpresa();
   }
 
   const ADM_POR_PAG = 25;
@@ -3043,6 +3128,7 @@
   let chartObra        = null;
   let chartGeoEstados  = null;
   let chartGeoCidades  = null;
+  let chartPessoasSetor = null;
 
   function renderDashboard() {
     if (!isAdmin || !dadosAdmin.length) return;
@@ -3061,6 +3147,7 @@
     aplicarFiltroSetor();
     aplicarFiltroObra();
     renderChartGeo('todas');
+    renderChartPessoasSetor();
   }
 
   function filtroDiscRapido(tipo, btn) {
@@ -3355,6 +3442,166 @@
   }
 
   // ── COBERTURA GEOGRÁFICA: ESTADOS E CIDADES ────────────────────────────
+
+  // ── GRÁFICO: PESSOAS POR SETOR ─────────────────────────────────────────
+
+  function filtroPessoasSetorRapido(tipo, btn) {
+    document.querySelectorAll('.btn-periodo[onclick^="filtroPessoasSetor"]').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    // Tudo = sem filtro de data, limpa os campos e mostra todos
+    document.getElementById('ps-de').value  = '';
+    document.getElementById('ps-ate').value = '';
+    renderChartPessoasSetor();
+  }
+
+  function filtroPessoasSetorMes(mes) {
+    if (!mes) return;
+    document.querySelectorAll('.btn-periodo[onclick^="filtroPessoasSetor"]').forEach(b => b.classList.remove('ativo'));
+    const btn = document.getElementById('ps-btn-mensal');
+    btn.classList.add('ativo');
+    const [ano, m] = mes.split('-');
+    const ultimo = new Date(parseInt(ano), parseInt(m), 0).getDate();
+    document.getElementById('ps-de').value  = `${mes}-01`;
+    document.getElementById('ps-ate').value = `${mes}-${String(ultimo).padStart(2,'0')}`;
+    btn.textContent = new Date(mes + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.','');
+    aplicarFiltroPessoasSetor();
+  }
+
+  function limparFiltroPessoasSetor() {
+    document.querySelectorAll('.btn-periodo[onclick^="filtroPessoasSetor"]').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('ps-btn-mensal').textContent = 'Mensal';
+    document.getElementById('ps-mes-picker').value = '';
+    document.getElementById('ps-de').value  = '';
+    document.getElementById('ps-ate').value = '';
+    renderChartPessoasSetor();
+  }
+
+  function aplicarFiltroPessoasSetor() {
+    const de  = document.getElementById('ps-de')?.value  || '';
+    const ate = document.getElementById('ps-ate')?.value || '';
+    renderChartPessoasSetor(de || null, ate || null);
+  }
+
+  async function renderChartPessoasSetor(de, ate) {
+    const ctx = document.getElementById('chart-pessoas-setor');
+    if (!ctx) return;
+    if (chartPessoasSetor) chartPessoasSetor.destroy();
+
+    // Busca todos os perfis com setor (created_at pode não existir ainda)
+    const { data } = await sb.from('profiles').select('nome,setor,created_at').not('setor', 'is', null);
+    if (!data || !data.length) return;
+
+    // Filtra pelo período de cadastro no app (created_at)
+    // Se created_at não existir no perfil, inclui sempre (sem filtro)
+    const filtrado = data.filter(p => {
+      if (!de && !ate) return true;
+      if (!p.created_at) return true; // sem data de cadastro → inclui
+      const dataCadastro = toLocalISO(new Date(p.created_at));
+      return (!de || dataCadastro >= de) && (!ate || dataCadastro <= ate);
+    });
+
+    // Agrupa por setor
+    const mapa = {};
+    filtrado.forEach(p => {
+      const s = (p.setor || '').trim();
+      if (s) mapa[s] = (mapa[s] || 0) + 1;
+    });
+
+    const sorted = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(([s]) => s);
+    const values = sorted.map(([, q]) => q);
+    const totalPessoas = values.reduce((a, b) => a + b, 0);
+
+    // Exibe o total no card
+    const kpi = document.getElementById('pessoas-setor-total');
+    if (kpi) kpi.textContent = totalPessoas + ' pessoa' + (totalPessoas !== 1 ? 's' : '');
+
+    // Salva período para exportação
+    ctx._periodoExport = (de && ate)
+      ? `${formatarData(de)} a ${formatarData(ate)}`
+      : 'Todos os cadastros';
+
+    // Altura dinâmica
+    ctx.parentElement.style.height = Math.max(160, sorted.length * 44 + 40) + 'px';
+
+    const cores = ['#5b9bd5','#f0a500','#4caf88','#e05a5a','#9b59b6','#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad'];
+
+    Chart.register(ChartDataLabels);
+    chartPessoasSetor = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map((_, i) => cores[i % cores.length] + 'cc'),
+          borderColor:      labels.map((_, i) => cores[i % cores.length]),
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 50 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => `  ${c.raw} pessoa(s)` } },
+          datalabels: {
+            anchor: 'end', align: 'end',
+            color: '#aaa', font: { size: 11, weight: '600' },
+            formatter: v => v
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#888', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function exportarGraficoPessoasSetor() {
+    const canvas = document.getElementById('chart-pessoas-setor');
+    if (!canvas || !chartPessoasSetor) return;
+
+    // Aplica cores pretas para exportação limpa
+    const escX = chartPessoasSetor.options.scales.x;
+    const escY = chartPessoasSetor.options.scales.y;
+    const dl   = chartPessoasSetor.options.plugins.datalabels;
+    const bkp  = { xColor: escX.ticks.color, yColor: escY.ticks.color, dlColor: dl.color };
+    escX.ticks.color = '#000'; escY.ticks.color = '#000'; dl.color = '#000';
+    chartPessoasSetor.update('none');
+
+    const totalPessoas = document.getElementById('pessoas-setor-total')?.textContent || '';
+    const periodo = canvas._periodoExport || 'Todos os cadastros';
+    const padding = 16, headerH = 88;
+    const dataFormatada = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const tmp = document.createElement('canvas');
+    tmp.width  = canvas.width  + padding * 2;
+    tmp.height = canvas.height + headerH + padding;
+    const ctx  = tmp.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tmp.width, tmp.height);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Pessoas por Setor', padding, 26);
+    ctx.fillStyle = '#555555';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Total: ' + totalPessoas + '  |  Período: ' + periodo, padding, 46);
+    ctx.fillText('Data de exportação: ' + dataFormatada, padding, 64);
+    ctx.drawImage(canvas, padding, headerH);
+
+    // Restaura cores originais
+    escX.ticks.color = bkp.xColor; escY.ticks.color = bkp.yColor; dl.color = bkp.dlColor;
+    chartPessoasSetor.update('none');
+
+    const link = document.createElement('a');
+    link.download = `pessoas_por_setor_${toLocalISO(new Date())}.png`;
+    link.href = tmp.toDataURL('image/png');
+    link.click();
+  }
 
   function filtroGeoStatus(status, btn) {
     // Ativa o botão selecionado e re-renderiza com o filtro de status
@@ -3833,8 +4080,16 @@
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
-    // Tenta buscar todos os perfis cadastrados; se falhar, usa só quem tem registros
-    const { data: todosOsPerfis } = await sb.from('profiles').select('id,nome,created_at').order('nome');
+    // Tenta buscar todos os perfis; se created_at não existir, busca só id e nome
+    let todosOsPerfis;
+    const { data: perfisComData, error: errData } = await sb.from('profiles').select('id,nome,created_at').order('nome');
+    if (errData) {
+      // created_at ainda não existe na tabela — busca sem ela
+      const { data: perfisSemData } = await sb.from('profiles').select('id,nome').order('nome');
+      todosOsPerfis = (perfisSemData || []).map(p => ({ ...p, created_at: null }));
+    } else {
+      todosOsPerfis = perfisComData || [];
+    }
     const usarPerfis = todosOsPerfis && todosOsPerfis.length > 0;
 
     // Monta a lista de colaboradores a verificar
@@ -4502,6 +4757,135 @@
 
   // Antigas funções do modal inline (mantém compatibilidade)
   function abrirCadastroObras() { trocarAba('obras-admin', document.getElementById('tab-obras-admin')); }
+
+  // ═══════════════════════════════════════════════════
+  // PAINEL EMPRESA
+  // ═══════════════════════════════════════════════════
+
+  let dadosEmpresa = []; // cache dos perfis para filtro local
+
+  async function renderPainelEmpresa() {
+    const tbody = document.getElementById('empresa-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Carregando...</td></tr>';
+
+    // Busca todos os perfis cadastrados ordenados por nome
+    const { data, error } = await sb.from('profiles')
+      .select('nome, setor, andar, lider, email, ramal')
+      .order('nome');
+
+    if (error || !data) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--danger);">Erro ao carregar colaboradores.</td></tr>';
+      return;
+    }
+
+    dadosEmpresa = data;
+    document.getElementById('empresa-busca').value = '';
+
+    // Popula o filtro de setor com valores únicos dos perfis
+    const setores = [...new Set(data.map(p => p.setor).filter(Boolean))].sort();
+    const selSetor = document.getElementById('empresa-filtro-setor');
+    selSetor.innerHTML = '<option value="">Todos os setores</option>'
+      + setores.map(s => `<option>${escapeHTML(s)}</option>`).join('');
+
+    // Popula o filtro de andar com valores únicos dos perfis
+    const andares = [...new Set(data.map(p => p.andar).filter(Boolean))].sort();
+    const selAndar = document.getElementById('empresa-filtro-andar');
+    selAndar.innerHTML = '<option value="">Todos os andares</option>'
+      + andares.map(a => `<option>${escapeHTML(a)}</option>`).join('');
+
+    renderLinhasEmpresa(dadosEmpresa);
+  }
+
+  function filtrarTabelaEmpresa() {
+    const termo = document.getElementById('empresa-busca').value.toLowerCase();
+    const setor = document.getElementById('empresa-filtro-setor').value;
+    const andar = document.getElementById('empresa-filtro-andar').value;
+
+    const filtrado = dadosEmpresa.filter(p =>
+      (!setor || p.setor === setor) &&
+      (!andar || p.andar === andar) &&
+      (!termo ||
+        (p.nome  || '').toLowerCase().includes(termo) ||
+        (p.setor || '').toLowerCase().includes(termo) ||
+        (p.lider || '').toLowerCase().includes(termo) ||
+        (p.email || '').toLowerCase().includes(termo)
+      )
+    );
+    renderLinhasEmpresa(filtrado);
+  }
+
+  function limparFiltrosEmpresa() {
+    document.getElementById('empresa-busca').value          = '';
+    document.getElementById('empresa-filtro-setor').value   = '';
+    document.getElementById('empresa-filtro-andar').value   = '';
+    renderLinhasEmpresa(dadosEmpresa);
+  }
+
+  function exportarEmpresaExcel() {
+    // Exporta a lista atualmente exibida (com filtros aplicados) para Excel
+    const termo = document.getElementById('empresa-busca').value.toLowerCase();
+    const setor = document.getElementById('empresa-filtro-setor').value;
+    const andar = document.getElementById('empresa-filtro-andar').value;
+
+    const lista = dadosEmpresa.filter(p =>
+      (!setor || p.setor === setor) &&
+      (!andar || p.andar === andar) &&
+      (!termo ||
+        (p.nome  || '').toLowerCase().includes(termo) ||
+        (p.setor || '').toLowerCase().includes(termo) ||
+        (p.lider || '').toLowerCase().includes(termo) ||
+        (p.email || '').toLowerCase().includes(termo)
+      )
+    );
+
+    // Monta as linhas da planilha com cabeçalho
+    const cabecalho = ['Nome', 'Setor', 'Andar', 'Líder / Responsável', 'E-mail', 'Ramal'];
+    const linhas = lista.map(p => [
+      p.nome  || '',
+      p.setor || '',
+      p.andar || '',
+      p.lider || '',
+      p.email || '',
+      p.ramal || '',
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([cabecalho, ...linhas]);
+
+    // Largura das colunas
+    ws['!cols'] = [
+      { wch: 30 }, // Nome
+      { wch: 20 }, // Setor
+      { wch: 14 }, // Andar
+      { wch: 25 }, // Líder
+      { wch: 30 }, // E-mail
+      { wch: 10 }, // Ramal
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
+    XLSX.writeFile(wb, `colaboradores_${toLocalISO(new Date())}.xlsx`);
+  }
+
+  function renderLinhasEmpresa(lista) {
+    const tbody = document.getElementById('empresa-tbody');
+    document.getElementById('empresa-total').textContent = lista.length + ' colaborador(es)';
+
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div style="padding:24px;text-align:center;color:var(--muted);">Nenhum colaborador encontrado.</div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map((p, i) => `
+      <tr style="background:${i % 2 === 0 ? 'transparent' : 'var(--bg2)'};border-bottom:1px solid var(--border);">
+        <td style="padding:10px 12px;color:var(--text);font-weight:500;">${escapeHTML(p.nome || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.setor || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.andar || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.lider || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.email || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.ramal || '—')}</td>
+      </tr>`).join('');
+  }
 
   // ═══════════════════════════════════════════════════
   // CADASTROS: DISCIPLINAS E SETORES

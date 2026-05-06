@@ -4132,7 +4132,7 @@
       }
 
       if (diasFalta.length > 0) {
-        alertas.push({ nome, dias: diasFalta.length, semLancamento: registrosColab.length === 0 });
+        alertas.push({ nome, dias: diasFalta.length, diasFalta, semLancamento: registrosColab.length === 0 });
       }
     }
 
@@ -4149,12 +4149,14 @@
       alertas.length + ' colaborador(es) com atraso';
 
     document.getElementById('alertas-atraso-lista').innerHTML = alertas.map(a => `
-      <div style="display:flex;align-items:center;justify-content:space-between;
-        background:var(--bg3);border-radius:var(--radius);padding:7px 12px;">
-        <span style="font-size:13px;color:var(--text);">👤 ${escapeHTML(a.nome)}${a.semLancamento ? ' <span style="font-size:10px;color:var(--muted);background:var(--bg2);padding:2px 6px;border-radius:4px;margin-left:6px;">Sem lançamentos</span>' : ''}</span>
-        <span style="font-size:12px;color:var(--danger);font-weight:600;">
-          ${a.dias} dia${a.dias > 1 ? 's' : ''} em atraso
-        </span>
+      <div style="background:var(--bg3);border-radius:var(--radius);padding:8px 12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${a.diasFalta.length ? '6px' : '0'};">
+          <span style="font-size:13px;color:var(--text);">👤 ${escapeHTML(a.nome)}${a.semLancamento ? ' <span style="font-size:10px;color:var(--muted);background:var(--bg2);padding:2px 6px;border-radius:4px;margin-left:6px;">Sem lançamentos</span>' : ''}</span>
+          <span style="font-size:12px;color:var(--danger);font-weight:600;">${a.dias} dia${a.dias > 1 ? 's' : ''} em atraso</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${a.diasFalta.sort().map(d => `<span style="font-size:10px;background:var(--danger);color:#fff;padding:2px 7px;border-radius:4px;opacity:0.85;">${formatarData(d)}</span>`).join('')}
+        </div>
       </div>`).join('');
 
     card.style.display = 'block';

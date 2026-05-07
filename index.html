@@ -1261,7 +1261,11 @@
           <div class="footer-resumo">
             <div class="footer-bloco"><span class="footer-label">Colaboradores</span><span class="footer-valor-reg" id="detalhe-qtd-colab">—</span></div>
             <span class="footer-sep">|</span>
-            <div class="footer-bloco"><span class="footer-label">Total de horas</span><span class="footer-valor-horas" id="detalhe-total-horas">—</span></div>
+            <div class="footer-bloco"><span class="footer-label">Total Original</span><span class="footer-valor-horas" id="detalhe-total-original">—</span></div>
+            <span class="footer-sep">|</span>
+            <div class="footer-bloco"><span class="footer-label">Total Revisão</span><span class="footer-valor-horas" id="detalhe-total-revisao" style="color:var(--info);">—</span></div>
+            <span class="footer-sep">|</span>
+            <div class="footer-bloco"><span class="footer-label">Total Geral</span><span class="footer-valor-horas" id="detalhe-total-horas">—</span></div>
           </div>
           <button class="btn-export" onclick="exportarDetalheObra()">↓ Exportar Excel</button>
         </div>
@@ -1332,6 +1336,13 @@
             <label>Data Fim</label>
             <input type="date" id="inp-obra-fim"
               style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;" />
+          </div>
+          <!-- Revisões -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">▎ Revisões</div>
+            <div id="form-obra-revisoes" style="display:flex;flex-wrap:wrap;gap:6px;">
+              <span style="font-size:12px;color:var(--muted);">Nenhum registro lançado para esta obra ainda.</span>
+            </div>
           </div>
           <!-- Dados Gerais -->
           <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:10px;margin-top:2px;">
@@ -2046,6 +2057,7 @@
       carregarObrasDB();
       carregarCategoriasDB();
       carregarCadastros();
+      carregarRevisoesDB();
       document.getElementById('reunioes-card').classList.remove('oculto');
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
@@ -2075,7 +2087,7 @@
         this.setAttribute('readonly','');
       });
       cronoRestaurar();
-      setTimeout(() => { carregarObrasDB(); carregarCategoriasDB(); carregarCadastros(); }, 500);
+      setTimeout(() => { carregarObrasDB(); carregarCategoriasDB(); carregarCadastros(); carregarRevisoesDB(); }, 500);
       setTimeout(() => carregarNaoLidas().catch(() => {}), 2000);
       iniciarSubGlobal();
       // Registra push em background sem bloquear
@@ -2854,8 +2866,33 @@
       ? lista.reduce((s, r) => s + r.horas, 0)
       : lista.filter(r => !OBRAS_ESPECIAIS.has(r.obra)).reduce((s, r) => s + r.horas, 0);
     const colabs = new Set(lista.map(r => r.colaborador)).size;
+
+    // Calcula totais separados: Original vs Revisão
+    // Revisão = registros cuja disciplina está marcada E cuja data >= data_inicio da revisão
+    const revisoesObra = revisoesCacheObra.filter(r => r.obra === nomeObra);
+    let totalRevisao  = 0;
+    let totalOriginal = 0;
+    lista.forEach(r => {
+      const rev = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      if (rev && r.data >= rev.data_inicio) {
+        totalRevisao  += r.horas;
+      } else {
+        totalOriginal += r.horas;
+      }
+    });
     const tbody  = document.getElementById('detalhe-obra-body');
-    tbody.innerHTML = lista.map(r => `
+
+    // Separa registros em Original e Revisão
+    const regsOriginal = lista.filter(r => {
+      const rev = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      return !(rev && r.data >= rev.data_inicio);
+    });
+    const regsRevisao = lista.filter(r => {
+      const rev = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      return rev && r.data >= rev.data_inicio;
+    });
+
+    const renderLinhas = regs => regs.map(r => `
       <tr>
         <td>${formatarData(r.data)}</td>
         <td>${escapeHTML(r.colaborador)}</td>
@@ -2866,22 +2903,51 @@
         <td style="color:var(--muted);font-style:${r.obs?'normal':'italic'}">${r.obs ? escapeHTML(r.obs) : '—'}</td>
       </tr>`).join('');
 
-    document.getElementById('detalhe-obra-nome').textContent   = nomeObra;
-    document.getElementById('detalhe-qtd-colab').textContent   = colabs;
-    document.getElementById('detalhe-total-horas').textContent = decimalParaHora(totalG);
+    // Monta o corpo da tabela com separação visual
+    let html = '';
+
+    // Seção Original
+    html += `<tr>
+      <td colspan="7" style="padding:8px 12px 4px;background:var(--bg3);">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">▎ Original</span>
+      </td>
+    </tr>`;
+    html += regsOriginal.length
+      ? renderLinhas(regsOriginal)
+      : `<tr><td colspan="7" style="padding:8px 12px;color:var(--muted);font-size:12px;">Nenhum registro original.</td></tr>`;
+
+    // Seção Revisão (só exibe se houver disciplinas em revisão)
+    if (revisoesObra.length > 0) {
+      html += `<tr>
+        <td colspan="7" style="padding:8px 12px 4px;background:var(--bg3);border-top:2px solid var(--info);">
+          <span style="font-size:10px;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:1px;">▎ Revisão</span>
+        </td>
+      </tr>`;
+      html += regsRevisao.length
+        ? renderLinhas(regsRevisao)
+        : `<tr><td colspan="7" style="padding:8px 12px;color:var(--muted);font-size:12px;">Nenhum registro de revisão ainda.</td></tr>`;
+    }
+
+    tbody.innerHTML = html;
+
+    document.getElementById('detalhe-obra-nome').textContent      = nomeObra;
+    document.getElementById('detalhe-qtd-colab').textContent      = colabs;
+    document.getElementById('detalhe-total-original').textContent = decimalParaHora(totalOriginal);
+    document.getElementById('detalhe-total-revisao').textContent  = decimalParaHora(totalRevisao);
+    document.getElementById('detalhe-total-horas').textContent    = decimalParaHora(totalG);
 
     document.getElementById('detalhe-obra').classList.remove('oculto');
     document.getElementById('detalhe-obra').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  function toggleDadosObra() {
+  async function toggleDadosObra() {
     const painel = document.getElementById('painel-dados-obra');
     const btn    = document.querySelector('#detalhe-obra .btn-filter');
     if (painel.style.display === 'none') {
       const nomeObra = document.getElementById('detalhe-obra-nome').textContent;
       const o = obrasCacheAll.find(x => x.nome === nomeObra);
       if (!o) { mostrarToast('Dados não encontrados para esta obra.', 'info'); return; }
-      renderDadosObra(o);
+      await renderDadosObra(o);
       painel.style.display = 'block';
       btn.textContent = '📋 Ocultar Dados';
     } else {
@@ -2890,7 +2956,7 @@
     }
   }
 
-  function renderDadosObra(o) {
+  async function renderDadosObra(o) {
     const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
     const priIcon    = { 'BAIXA': '🔵', 'NORMAL': '⚪', 'ALTA': '🟠', 'URGENTE': '🔴' };
 
@@ -2919,7 +2985,33 @@
       </div>`;
     };
 
+    // Busca as disciplinas com registros nessa obra
+    // Usa dadosAdmin se já carregado, senão busca direto do banco
+    let registrosObra = dadosAdmin.filter(r => r.obra === o.nome && r.disciplina);
+    if (!registrosObra.length && dadosAdmin.length === 0) {
+      const { data } = await sb.from('registros').select('disciplina').eq('obra', o.nome).not('disciplina', 'is', null);
+      registrosObra = data || [];
+    }
+    const disciplinasUsadas = [...new Set(registrosObra.map(r => r.disciplina).filter(Boolean))].sort();
+
+    // Monta seção Revisões com pílulas por disciplina
+    const secaoRevisoes = `
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">▎ Revisões</div>
+        ${disciplinasUsadas.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${disciplinasUsadas.map(d => `
+                <label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:3px 10px;border-radius:20px;cursor:pointer;">
+                  <input type="checkbox" data-disciplina="${escapeHTML(d)}" style="cursor:pointer;" />
+                  ${escapeHTML(d)}
+                </label>`).join('')}
+            </div>`
+          : `<span style="font-size:12px;color:var(--muted);">Nenhum registro lançado para esta obra ainda.</span>`
+        }
+      </div>`;
+
     document.getElementById('painel-dados-obra').innerHTML =
+      secaoRevisoes +
       secao('Dados Gerais', [
         ['Tipo de Obra',         o.tipo_obra],
         ['Status',               (statusIcon[o.status]||'') + ' ' + (o.status||'')],
@@ -2960,7 +3052,7 @@
     el.classList.add('active');
     document.getElementById('panel-' + id).classList.add('active');
 
-    if (id === 'admin' || (isAdmin && id === 'por-obra') || (isAdmin && id === 'por-colaborador')) {
+    if (id === 'admin' || (isAdmin && id === 'por-obra') || (isAdmin && id === 'por-colaborador') || (isAdmin && id === 'obras-admin')) {
       if (dadosAdmin.length === 0) await carregarDadosAdmin();
     }
     if (id === 'admin')            renderAdmin();
@@ -4082,22 +4174,21 @@
 
     // Tenta buscar todos os perfis; se created_at não existir, busca só id e nome
     let todosOsPerfis;
-    const { data: perfisComData, error: errData } = await sb.from('profiles').select('id,nome,created_at').order('nome');
+    const { data: perfisComData, error: errData } = await sb.from('profiles').select('id,nome,created_at,is_admin').order('nome');
     if (errData) {
       // created_at ainda não existe na tabela — busca sem ela
-      const { data: perfisSemData } = await sb.from('profiles').select('id,nome').order('nome');
+      const { data: perfisSemData } = await sb.from('profiles').select('id,nome,is_admin').order('nome');
       todosOsPerfis = (perfisSemData || []).map(p => ({ ...p, created_at: null }));
     } else {
       todosOsPerfis = perfisComData || [];
     }
     const usarPerfis = todosOsPerfis && todosOsPerfis.length > 0;
 
-    // Monta a lista de colaboradores a verificar
+    // Monta a lista de colaboradores a verificar — exclui admins pois não lançam registros
     let colaboradoresBase;
     if (usarPerfis) {
-      colaboradoresBase = todosOsPerfis.filter(p => p.nome);
+      colaboradoresBase = todosOsPerfis.filter(p => p.nome && !p.is_admin);
     } else {
-      // Fallback: só quem tem registros
       const nomes = [...new Set(dadosAdmin.map(r => r.colaborador))].filter(Boolean).sort();
       colaboradoresBase = nomes.map(n => ({ nome: n, created_at: null }));
     }
@@ -4175,6 +4266,7 @@
   let obrasCache    = [];  // obras ativas e visíveis (para colaborador)
   let obrasCacheAll = [];  // todas as obras (para admin)
   let obraEditandoId = null;
+  let revisoesCacheObra = []; // cache das disciplinas em revisão por obra
 
   async function carregarObrasDB() {
     const { data } = await sb.from('obras').select('*').eq('ativo', true).order('nome');
@@ -4194,6 +4286,12 @@
 
     // Se admin, renderiza o painel de obras
     if (isAdmin) renderPainelObras();
+  }
+
+  async function carregarRevisoesDB() {
+    // Carrega todas as revisões ativas do banco
+    const { data } = await sb.from('revisoes_obra').select('*').eq('ativo', true);
+    revisoesCacheObra = data || [];
   }
 
   let CATEGORIAS_OBRAS = [];
@@ -4333,7 +4431,7 @@
     obraEditandoId = null;
   }
 
-  function visualizarObraAdmin(id) {
+  async function visualizarObraAdmin(id) {
     const o = obrasCacheAll.find(x => x.id === id);
     if (!o) return;
 
@@ -4357,7 +4455,7 @@
     }
 
     document.getElementById('viz-obra-titulo').textContent = o.nome;
-    renderDadosObra(o);
+    await renderDadosObra(o);
     // Reutiliza renderDadosObra mas no modal de visualização
     document.getElementById('viz-obra-conteudo').innerHTML =
       document.getElementById('painel-dados-obra')?.innerHTML || '';
@@ -4439,6 +4537,33 @@
     document.getElementById('inp-obra-escopo').value       = (o && o.escopo)        || '';
     document.getElementById('inp-obra-historico').value    = (o && o.historico)     || '';
     document.getElementById('obra-modal-erro').textContent = '';
+
+    // Popula as disciplinas com registros nessa obra (Revisões)
+    const divRevisoes = document.getElementById('form-obra-revisoes');
+    if (divRevisoes && o) {
+      const discs = [...new Set(dadosAdmin.filter(r => r.obra === o.nome && r.disciplina).map(r => r.disciplina))].sort();
+      // Disciplinas já marcadas como revisão para essa obra
+      const jaEmRevisao = new Set(
+        revisoesCacheObra.filter(r => r.obra === o.nome).map(r => r.disciplina)
+      );
+      divRevisoes.innerHTML = discs.length
+        ? discs.map(d => {
+            const rev = [...jaEmRevisao].includes(d)
+              ? revisoesCacheObra.find(r => r.obra === o.nome && r.disciplina === d)
+              : null;
+            return `
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:4px 10px;border-radius:20px;cursor:pointer;">
+              <input type="checkbox" data-disciplina="${escapeHTML(d)}" ${rev ? 'checked' : ''} style="cursor:pointer;" />
+              ${escapeHTML(d)}
+              <input type="date" data-data-disciplina="${escapeHTML(d)}"
+                value="${rev ? rev.data_inicio : toLocalISO(new Date())}"
+                title="Data início da revisão"
+                style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:2px 6px;font-size:10px;font-family:var(--font);outline:none;width:120px;"
+                onclick="event.stopPropagation()" />
+            </label>`}).join('')
+        : '<span style="font-size:12px;color:var(--muted);">Nenhum registro lançado para esta obra ainda.</span>';
+    }
+
     document.getElementById('modal-nova-obra').style.display = 'block';
     setTimeout(() => document.getElementById('inp-obra-modal').focus(), 100);
   }
@@ -4496,8 +4621,45 @@
       return;
     }
 
-    fecharModalObra();
-    mostrarToast(obraEditandoId ? 'Obra atualizada!' : 'Obra cadastrada!');
+    // Lê os checkboxes e salva o id ANTES de fechar o modal
+    const checksRevisao = [];
+    const obraEditandoIdAtual = obraEditandoId;
+    if (obraEditandoIdAtual) {
+      document.querySelectorAll('#form-obra-revisoes input[type=checkbox]').forEach(chk => {
+        const disc      = chk.dataset.disciplina;
+        const dataInput = document.querySelector(`#form-obra-revisoes input[data-data-disciplina="${disc}"]`);
+        checksRevisao.push({
+          disc,
+          checked:    chk.checked,
+          dataInicio: dataInput?.value || toLocalISO(new Date())
+        });
+      });
+    }
+
+    fecharModalObra(); // zera obraEditandoId
+    mostrarToast(obraEditandoIdAtual ? 'Obra atualizada!' : 'Obra cadastrada!');
+
+    // Salva as disciplinas marcadas como revisão
+    if (obraEditandoIdAtual && checksRevisao.length) {
+      const nomeObra = obrasCacheAll.find(o => o.id === obraEditandoIdAtual)?.nome || nome;
+      const hoje     = toLocalISO(new Date());
+
+      for (const { disc, checked } of checksRevisao) {
+        const jaExiste  = revisoesCacheObra.find(r => r.obra === nomeObra && r.disciplina === disc);
+        // Pega a data do input correspondente; se vazio, usa hoje
+        const dataInput = checksRevisao.find(c => c.disc === disc)?.dataInicio || hoje;
+        if (checked && !jaExiste) {
+          await sb.from('revisoes_obra').insert({ obra: nomeObra, disciplina: disc, data_inicio: dataInput });
+        } else if (checked && jaExiste && jaExiste.data_inicio !== dataInput) {
+          // Atualiza a data se foi alterada
+          await sb.from('revisoes_obra').update({ data_inicio: dataInput }).eq('id', jaExiste.id);
+        } else if (!checked && jaExiste) {
+          await sb.from('revisoes_obra').update({ ativo: false }).eq('id', jaExiste.id);
+        }
+      }
+      await carregarRevisoesDB();
+    }
+
     await carregarObrasDB();
   }
 
@@ -5493,10 +5655,73 @@
   }
 
   function exportarDetalheObra() {
-    const titulo = document.getElementById('detalhe-obra-nome').textContent;
-    const fonte  = isAdmin ? dadosAdmin : dados;
-    const lista  = fonte.filter(r => r.obra === titulo);
-    gerarExcel(lista, 'obra_' + titulo.replace(/\s+/g,'_'));
+    const titulo      = document.getElementById('detalhe-obra-nome').textContent;
+    const fonte       = isAdmin ? dadosAdmin : dados;
+    const lista       = fonte.filter(r => r.obra === titulo);
+    if (!lista.length) { mostrarToast('Sem dados para exportar.', 'info'); return; }
+
+    // Separa Original e Revisão usando o mesmo critério da tela
+    const revisoesObra = revisoesCacheObra.filter(r => r.obra === titulo);
+    const listaOriginal = lista.filter(r => {
+      const rev = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      return !(rev && r.data >= rev.data_inicio);
+    });
+    const listaRevisao = lista.filter(r => {
+      const rev = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      return rev && r.data >= rev.data_inicio;
+    });
+
+    const totalHoras = arr => arr.reduce((s, r) => s + (r.horas || 0), 0);
+
+    // Monta uma planilha com linha de total no rodapé
+    const montarWS = (regs, label) => {
+      const linhas = registrosParaLinhas(regs);
+      const totalH = totalHoras(regs);
+      const rodape = ['', '', '', '', '', `TOTAL ${label}`, decimalParaHora(totalH)];
+      const ws = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhas, [], rodape]);
+      aplicarFormatoHoras(ws, linhas.length + 1);
+      estilizarPlanilha(ws);
+      return ws;
+    };
+
+    const wb = XLSX.utils.book_new();
+
+    // Aba Tudo — todos os registros com coluna extra indicando Original ou Revisão
+    const linhasTudo = lista.map(r => {
+      const rev  = revisoesObra.find(rv => rv.disciplina === r.disciplina);
+      const tipo = (rev && r.data >= rev.data_inicio) ? 'Revisão' : 'Original';
+      const base = registrosParaLinhas([r])[0];
+      return [...base, tipo];
+    });
+    const cabTudo = [...CAB_EXCEL, 'Tipo'];
+    const wsTudo  = XLSX.utils.aoa_to_sheet([cabTudo, ...linhasTudo]);
+    aplicarFormatoHoras(wsTudo, linhasTudo.length + 1);
+    estilizarPlanilha(wsTudo);
+    XLSX.utils.book_append_sheet(wb, wsTudo, 'Tudo');
+
+    // Aba Original
+    if (listaOriginal.length) {
+      XLSX.utils.book_append_sheet(wb, montarWS(listaOriginal, 'ORIGINAL'), 'Original');
+    }
+
+    // Aba Revisão
+    if (listaRevisao.length) {
+      XLSX.utils.book_append_sheet(wb, montarWS(listaRevisao, 'REVISÃO'), 'Revisão');
+    }
+
+    // Aba Resumo com os 3 totais
+    const resumo = [
+      ['Resumo — ' + titulo],
+      [],
+      ['',          'Horas'],
+      ['Original',  decimalParaHora(totalHoras(listaOriginal))],
+      ['Revisão',   decimalParaHora(totalHoras(listaRevisao))],
+      ['Total Geral', decimalParaHora(totalHoras(lista))],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'Resumo');
+
+    XLSX.writeFile(wb, `obra_${titulo.replace(/\s+/g,'_')}_${toLocalISO(new Date())}.xlsx`);
+    mostrarToast('Excel exportado!');
   }
 
   // Mantém gerarCSV como fallback (não usado mais)

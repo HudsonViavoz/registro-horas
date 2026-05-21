@@ -717,6 +717,11 @@
       transition: border-color 0.15s, background 0.15s;
     }
     .btn-chat:hover { border-color: var(--accent); background: rgba(240,165,0,0.08); }
+    .exp-tab { padding:6px 14px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font); }
+    .exp-tab.ativo { color:var(--accent);border-bottom:2px solid var(--accent); }
+    .exp-item { display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);cursor:pointer; }
+    .exp-item:hover { border-color:var(--border2); }
+    .exp-item input[type=checkbox] { cursor:pointer; }
     .chat-badge {
       position: absolute; top: -6px; right: -6px;
       background: var(--danger); color: #fff;
@@ -965,7 +970,7 @@
     <button class="btn-chat" id="btn-reservas" onclick="toggleReservas()" title="Reserva de Salas">
       🗓️
     </button>
-    <button class="btn-chat" id="btn-backup" onclick="gerarBackupExcel()" title="Exportar Backup Completo" style="display:none;">📦</button>
+    <button class="btn-chat" id="btn-backup" onclick="abrirModalExportacao()" title="Exportar Dados" style="display:none;">📦</button>
     <button class="btn-chat" id="btn-resumo" onclick="abrirResumo()" title="Resumo Geral" style="display:none;">📋</button>
     <!-- Botão Chat -->
     <button class="btn-chat" id="btn-chat" onclick="toggleChat()" title="Chat">
@@ -1165,8 +1170,22 @@
           oninput="filtrarCardsColab()" />
         <button class="btn-filter" onclick="limparBuscaColab()">Limpar</button>
       </div>
+      <!-- Abas Ativos / Inativos -->
+      <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid var(--border);">
+        <button id="colab-tab-ativos" onclick="trocarAbaColab('ATIVO')"
+          style="padding:6px 18px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;font-family:var(--font);">
+          ✅ Ativos
+        </button>
+        <button id="colab-tab-inativos" onclick="trocarAbaColab('INATIVO')"
+          style="padding:6px 18px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);">
+          🔴 Inativos
+        </button>
+      </div>
       <div id="grid-colab" class="resumo-grid"></div>
-      <div class="footer-bar"><span id="footer-colab-total" style="font-size:12px;color:var(--muted);">—</span></div>
+      <div class="footer-bar">
+        <span id="footer-colab-total" style="font-size:12px;color:var(--muted);">—</span>
+        <div id="pag-colab" style="display:flex;gap:4px;align-items:center;"></div>
+      </div>
 
       <!-- Detalhe do colaborador selecionado -->
       <div id="detalhe-colab" class="oculto">
@@ -1230,7 +1249,10 @@
         <div id="lista-obras-admin" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
       <div id="grid-obra" class="resumo-grid"></div>
-      <div class="footer-bar"><span id="footer-obra-total" style="font-size:12px;color:var(--muted);">—</span></div>
+      <div class="footer-bar">
+        <span id="footer-obra-total" style="font-size:12px;color:var(--muted);">—</span>
+        <div id="pag-obra" style="display:flex;gap:4px;align-items:center;"></div>
+      </div>
 
       <!-- Detalhe da obra selecionada -->
       <div id="detalhe-obra" class="oculto">
@@ -1443,6 +1465,7 @@
       </div>
 
       <div id="grid-obras-admin"></div>
+      <div id="pag-obras-admin" style="display:flex;gap:4px;align-items:center;justify-content:center;margin-top:12px;"></div>
     </div>
     <!-- PAINEL: DASHBOARD -->
     <div id="panel-dashboard" class="panel">
@@ -1518,6 +1541,8 @@
           </div>
         </div>
         <canvas id="chart-obra"></canvas>
+        <!-- Paginação do gráfico -->
+        <div id="pag-chart-obra" style="display:flex;gap:4px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap;"></div>
       </div>
 
       <!-- ── CARD COMBINADO: COBERTURA GEOGRÁFICA ── -->
@@ -1610,7 +1635,7 @@
       <div style="max-width:1100px;margin:0 auto;padding:1rem 0;">
 
         <!-- Cabeçalho -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <div style="font-size:16px;font-weight:700;color:var(--text);">🏢 Colaboradores da Empresa</div>
             <button class="btn-add" style="height:28px;font-size:11px;padding:0 12px;" onclick="exportarEmpresaExcel()">↓ Excel</button>
@@ -1634,11 +1659,24 @@
           </div>
         </div>
 
+        <!-- Abas Ativos / Inativos -->
+        <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid var(--border);">
+          <button id="empresa-tab-ativos" onclick="trocarAbaEmpresa('ATIVO')"
+            style="padding:6px 18px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;font-family:var(--font);">
+            ✅ Ativos
+          </button>
+          <button id="empresa-tab-inativos" onclick="trocarAbaEmpresa('INATIVO')"
+            style="padding:6px 18px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);">
+            🔴 Inativos
+          </button>
+        </div>
+
         <!-- Tabela -->
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:var(--bg3);">
+                <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Status</th>
                 <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Nome</th>
                 <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Setor</th>
                 <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border);">Andar</th>
@@ -2654,6 +2692,22 @@
   // Obras especiais que não entram nos totais dos cards
   const OBRAS_ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
 
+  let colabAbaAtual = 'ATIVO'; // controla qual aba está visível no Por Colaborador
+
+  function trocarAbaColab(status) {
+    colabAbaAtual = status;
+    const estAtivo = status === 'ATIVO';
+    const tabAt = document.getElementById('colab-tab-ativos');
+    const tabIn = document.getElementById('colab-tab-inativos');
+    if (tabAt && tabIn) {
+      tabAt.style.color        = estAtivo  ? 'var(--accent)' : 'var(--muted)';
+      tabAt.style.borderBottom = estAtivo  ? '2px solid var(--accent)' : '2px solid transparent';
+      tabIn.style.color        = !estAtivo ? 'var(--danger)' : 'var(--muted)';
+      tabIn.style.borderBottom = !estAtivo ? '2px solid var(--danger)' : '2px solid transparent';
+    }
+    renderPorColaborador();
+  }
+
   function renderPorColaborador() {
     const grid  = document.getElementById('grid-colab');
     const fonte = isAdmin ? dadosAdmin : dados;
@@ -2661,29 +2715,41 @@
 
     fonte.forEach(r => {
       if (!mapa[r.colaborador]) mapa[r.colaborador] = { horas: 0, obras: new Set(), dias: new Set(), setor: r.setor || '' };
-      // Dias trabalhados conta sempre
       mapa[r.colaborador].dias.add(r.data);
-      // Horas e obras: exclui as entradas especiais
       if (!OBRAS_ESPECIAIS.has(r.obra)) {
         mapa[r.colaborador].horas += r.horas;
         mapa[r.colaborador].obras.add(r.obra);
       }
-      // Atualiza setor se ainda não tiver
       if (!mapa[r.colaborador].setor && r.setor) mapa[r.colaborador].setor = r.setor;
     });
-    const lista    = Object.entries(mapa).sort((a, b) => a[0].localeCompare(b[0]));
-    const maxHoras = lista.length > 0 ? Math.max(...lista.map(([,v]) => v.horas)) : 1;
-    const totalG   = lista.reduce((s, [, v]) => s + v.horas, 0);
 
-    grid.innerHTML = lista.length === 0
-      ? `<div class="empty"><strong>Sem dados</strong>Adicione registros para ver o resumo.</div>`
-      : lista.map(([nome, val]) => `
-          <div class="resumo-card clicavel" onclick="mostrarDetalheColab('${escapeHTML(nome).replace(/'/g,"\\'")}')">
-            <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
-            ${val.setor ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(val.setor)}</div>` : ''}
-            <div class="total-h">${decimalParaHora(val.horas)}</div>
-            <div class="sub-info">${val.obras.size} obra(s) · ${val.dias.size} dia(s) trabalhado(s)</div>
-          </div>`).join('');
+    // Filtra por status usando o dadosEmpresa como referência
+    const statusMap = {};
+    dadosEmpresa.forEach(p => { if (p.nome) statusMap[p.nome] = p.status || 'ATIVO'; });
+
+    const listaFull = Object.entries(mapa).sort((a, b) => a[0].localeCompare(b[0]));
+
+    // Atualiza contadores nas abas
+    const qtdAtivos   = listaFull.filter(([n]) => (statusMap[n] || 'ATIVO') === 'ATIVO').length;
+    const qtdInativos = listaFull.filter(([n]) => (statusMap[n] || 'ATIVO') === 'INATIVO').length;
+    const tabAt = document.getElementById('colab-tab-ativos');
+    const tabIn = document.getElementById('colab-tab-inativos');
+    if (tabAt) tabAt.innerHTML = `✅ Ativos <span style="background:var(--bg3);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;">${qtdAtivos}</span>`;
+    if (tabIn) tabIn.innerHTML = `🔴 Inativos <span style="background:var(--bg3);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;">${qtdInativos}</span>`;
+
+    // Aplica filtro de aba
+    const lista = listaFull.filter(([n]) => (statusMap[n] || 'ATIVO') === colabAbaAtual);
+
+    const totalG = lista.reduce((s, [, v]) => s + v.horas, 0);
+
+    if (lista.length === 0) {
+      grid.innerHTML = `<div class="empty"><strong>Sem dados</strong>${colabAbaAtual === 'ATIVO' ? 'Nenhum colaborador ativo.' : 'Nenhum colaborador inativo.'}</div>`;
+      document.getElementById('pag-colab').innerHTML = '';
+    } else {
+      colabListaAtual = lista;
+      colabPagAtual   = 1;
+      renderGridColab();
+    }
 
     document.getElementById('footer-colab-total').textContent =
       lista.length > 0 ? `${lista.length} colaborador(es) · Total: ${decimalParaHora(totalG)}` : '';
@@ -2747,6 +2813,96 @@
     await carregarObrasDB();
     renderPorObra();
     mostrarToast(status === 'CONCLUIDA' ? 'Obra concluída e ocultada dos colaboradores.' : 'Status atualizado.');
+  }
+
+  const GRID_POR_PAG = 40; // 10 linhas × 4 colunas
+  let obraPagAtual  = 1;
+  let colabPagAtual = 1;
+
+  function paginacaoGridHTML(pagAtual, totalPags, fnIr) {
+    if (totalPags <= 1) return '';
+    let html = '';
+    const estilo = (ativo) => `style="padding:3px 9px;font-size:12px;border-radius:4px;border:1px solid var(--border2);background:${ativo ? 'var(--accent)' : 'var(--bg3)'};color:${ativo ? '#000' : 'var(--text)'};cursor:pointer;font-family:var(--font);"`;
+    html += `<button ${estilo(false)} onclick="${fnIr}(${pagAtual - 1})" ${pagAtual === 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= totalPags; i++) {
+      if (totalPags > 7 && i > 2 && i < totalPags - 1 && Math.abs(i - pagAtual) > 1) {
+        if (i === 3 || i === totalPags - 2) html += `<span style="color:var(--muted);padding:0 2px;">…</span>`;
+        continue;
+      }
+      html += `<button ${estilo(i === pagAtual)} onclick="${fnIr}(${i})">${i}</button>`;
+    }
+    html += `<button ${estilo(false)} onclick="${fnIr}(${pagAtual + 1})" ${pagAtual === totalPags ? 'disabled' : ''}>›</button>`;
+    return html;
+  }
+
+  function irPagObra(p) {
+    const totalPags = Math.ceil(obraListaAtual.length / GRID_POR_PAG);
+    if (p < 1 || p > totalPags) return;
+    obraPagAtual = p;
+    renderGridObra();
+    document.getElementById('panel-por-obra')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function irPagColab(p) {
+    const totalPags = Math.ceil(colabListaAtual.length / GRID_POR_PAG);
+    if (p < 1 || p > totalPags) return;
+    colabPagAtual = p;
+    renderGridColab();
+    document.getElementById('panel-por-colaborador')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  let obraListaAtual  = []; // cache da lista filtrada para paginação
+  let colabListaAtual = []; // cache da lista filtrada para paginação
+
+  function renderGridObra() {
+    const grid      = document.getElementById('grid-obra');
+    const pagEl     = document.getElementById('pag-obra');
+    const totalPags = Math.ceil(obraListaAtual.length / GRID_POR_PAG);
+    const inicio    = (obraPagAtual - 1) * GRID_POR_PAG;
+    const pagina    = obraListaAtual.slice(inicio, inicio + GRID_POR_PAG);
+    const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
+    const statusOpts = ['EM ANDAMENTO','PAUSADA','CONCLUIDA'];
+
+    grid.innerHTML = pagina.map(([nome, val]) => {
+      const esp    = val.especial;
+      const st     = val.status || 'EM ANDAMENTO';
+      const semReg = val.semRegistros;
+      const obraId = val.obraId;
+      const selectStatus = isAdmin && !esp && obraId ? `
+        <div style="margin-top:8px;" onclick="event.stopPropagation()">
+          <select class="status-select-card" onchange="alterarStatusObra('${obraId}',this.value)"
+            style="background:var(--bg2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:2px 6px;font-family:var(--font);cursor:pointer;outline:none;">
+            ${statusOpts.map(s => `<option value="${s}" ${s===st?'selected':''}>${statusIcon[s]} ${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('')}
+          </select>
+        </div>` : (!esp ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">${statusIcon[st] || ''} ${st.charAt(0)+st.slice(1).toLowerCase()}</div>` : '');
+      return `<div class="resumo-card ${!semReg ? 'clicavel' : ''} ${esp ? 'card-especial' : ''} ${semReg ? 'card-sem-reg' : ''}"
+        ${!semReg ? `onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}' )"` : ''}>
+        <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
+        <div class="total-h" ${esp||semReg ? 'style="opacity:0.6;"' : ''}>${decimalParaHora(val.horas)}</div>
+        <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : semReg ? 'Sem registros ainda' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
+        ${selectStatus}
+      </div>`;
+    }).join('');
+
+    if (pagEl) pagEl.innerHTML = paginacaoGridHTML(obraPagAtual, totalPags, 'irPagObra');
+  }
+
+  function renderGridColab() {
+    const grid      = document.getElementById('grid-colab');
+    const pagEl     = document.getElementById('pag-colab');
+    const totalPags = Math.ceil(colabListaAtual.length / GRID_POR_PAG);
+    const inicio    = (colabPagAtual - 1) * GRID_POR_PAG;
+    const pagina    = colabListaAtual.slice(inicio, inicio + GRID_POR_PAG);
+
+    grid.innerHTML = pagina.map(([nome, val]) => `
+      <div class="resumo-card clicavel" onclick="mostrarDetalheColab('${escapeHTML(nome).replace(/'/g,"\\'")}')">
+        <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
+        ${val.setor ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(val.setor)}</div>` : ''}
+        <div class="total-h">${decimalParaHora(val.horas)}</div>
+        <div class="sub-info">${val.obras.size} obra(s) · ${val.dias.size} dia(s) trabalhado(s)</div>
+      </div>`).join('');
+
+    if (pagEl) pagEl.innerHTML = paginacaoGridHTML(colabPagAtual, totalPags, 'irPagColab');
   }
 
   function renderPorObra() {
@@ -2816,30 +2972,14 @@
     const statusIcon = { 'EM ANDAMENTO': '🔵', 'PAUSADA': '🟡', 'CONCLUIDA': '🟢' };
     const statusOpts = ['EM ANDAMENTO','PAUSADA','CONCLUIDA'];
 
-    grid.innerHTML = lista.length === 0
-      ? `<div class="empty"><strong>Sem obras</strong>${obraStatusFiltro !== 'TODAS' ? 'Nenhuma obra com este status.' : 'Cadastre obras na aba Obras.'}</div>`
-      : lista.map(([nome, val]) => {
-          const esp    = val.especial;
-          const st     = val.status || 'EM ANDAMENTO';
-          const semReg = val.semRegistros;
-          const obraId = val.obraId;
-
-          const selectStatus = isAdmin && !esp && obraId ? `
-            <div style="margin-top:8px;" onclick="event.stopPropagation()">
-              <select class="status-select-card" onchange="alterarStatusObra('${obraId}',this.value)"
-                style="background:var(--bg2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:2px 6px;font-family:var(--font);cursor:pointer;outline:none;">
-                ${statusOpts.map(s => `<option value="${s}" ${s===st?'selected':''}>${statusIcon[s]} ${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('')}
-              </select>
-            </div>` : (!esp ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">${statusIcon[st] || ''} ${st.charAt(0)+st.slice(1).toLowerCase()}</div>` : '');
-
-          return `<div class="resumo-card ${!semReg ? 'clicavel' : ''} ${esp ? 'card-especial' : ''} ${semReg ? 'card-sem-reg' : ''}"
-            ${!semReg ? `onclick="mostrarDetalheObra('${escapeHTML(nome).replace(/'/g,"\\'")}' )"` : ''}>
-            <div class="nome" title="${escapeHTML(nome)}">${escapeHTML(nome)}</div>
-            <div class="total-h" ${esp||semReg ? 'style="opacity:0.6;"' : ''}>${decimalParaHora(val.horas)}</div>
-            <div class="sub-info">${esp ? val.dias.size + ' registro(s)' : semReg ? 'Sem registros ainda' : val.pessoas.size + ' colaborador(es) · ' + val.dias.size + ' dia(s) de trabalho'}</div>
-            ${selectStatus}
-          </div>`;
-        }).join('');
+    if (lista.length === 0) {
+      grid.innerHTML = `<div class="empty"><strong>Sem obras</strong>${obraStatusFiltro !== 'TODAS' ? 'Nenhuma obra com este status.' : 'Cadastre obras na aba Obras.'}</div>`;
+      document.getElementById('pag-obra').innerHTML = '';
+    } else {
+      obraListaAtual = lista;
+      obraPagAtual   = 1;
+      renderGridObra();
+    }
 
     document.getElementById('footer-obra-total').textContent =
       normais.filter(([,v]) => !v.semRegistros).length > 0
@@ -3481,20 +3621,30 @@
     renderChartObra(regs);
   }
 
-  function renderChartObra(regs) {
+  const OBRA_CHART_POR_PAG = 15;
+  let obraChartPagAtual  = 1;
+  let obraChartSortedAll = []; // cache completo para paginação
+
+  function irPagChartObra(p) {
+    const totalPags = Math.ceil(obraChartSortedAll.length / OBRA_CHART_POR_PAG);
+    if (p < 1 || p > totalPags) return;
+    obraChartPagAtual = p;
+    renderChartObraPagina();
+  }
+
+  function renderChartObraPagina() {
     const ctx = document.getElementById('chart-obra');
     if (!ctx) return;
     if (chartObra) chartObra.destroy();
 
-    // Agrupa horas por obra e ordena do maior para o menor
-    const mapa = {};
-    regs.forEach(r => { const o = r.obra || 'SEM OBRA'; mapa[o] = (mapa[o] || 0) + r.horas; });
-    const sorted = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
-    const labels = sorted.map(([o]) => o);
-    const values = sorted.map(([,h]) => Math.round(h * 100) / 100);
+    const totalPags = Math.ceil(obraChartSortedAll.length / OBRA_CHART_POR_PAG);
+    const inicio    = (obraChartPagAtual - 1) * OBRA_CHART_POR_PAG;
+    const pagina    = obraChartSortedAll.slice(inicio, inicio + OBRA_CHART_POR_PAG);
+    const labels    = pagina.map(([o]) => o);
+    const values    = pagina.map(([,h]) => Math.round(h * 100) / 100);
 
-    // Altura dinâmica conforme a quantidade de obras
-    ctx.parentElement.style.height = Math.max(160, sorted.length * 44 + 40) + 'px';
+    // Altura dinâmica conforme itens da página
+    ctx.parentElement.style.height = Math.max(160, pagina.length * 44 + 40) + 'px';
 
     const cores = ['#5b9bd5','#f0a500','#4caf88','#e05a5a','#9b59b6','#e67e22','#1abc9c','#3498db','#e74c3c','#8e44ad'];
 
@@ -3531,6 +3681,24 @@
         }
       }
     });
+
+    // Renderiza botões de paginação
+    const pagEl = document.getElementById('pag-chart-obra');
+    if (pagEl) pagEl.innerHTML = paginacaoGridHTML(obraChartPagAtual, totalPags, 'irPagChartObra');
+  }
+
+  function renderChartObra(regs) {
+    // Agrupa horas por obra, exclui especiais e ordena do maior para o menor
+    const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
+    const mapa = {};
+    regs.forEach(r => {
+      if (ESPECIAIS.has(r.obra)) return;
+      const o = r.obra || 'SEM OBRA';
+      mapa[o] = (mapa[o] || 0) + r.horas;
+    });
+    obraChartSortedAll = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+    obraChartPagAtual  = 1;
+    renderChartObraPagina();
   }
 
   // ── COBERTURA GEOGRÁFICA: ESTADOS E CIDADES ────────────────────────────
@@ -3579,8 +3747,8 @@
     if (!ctx) return;
     if (chartPessoasSetor) chartPessoasSetor.destroy();
 
-    // Busca todos os perfis com setor (created_at pode não existir ainda)
-    const { data } = await sb.from('profiles').select('nome,setor,created_at').not('setor', 'is', null);
+    // Busca todos os perfis com setor, excluindo inativos
+    const { data } = await sb.from('profiles').select('nome,setor,created_at').not('setor', 'is', null).neq('status', 'INATIVO');
     if (!data || !data.length) return;
 
     // Filtra pelo período de cadastro no app (created_at)
@@ -4174,20 +4342,19 @@
 
     // Tenta buscar todos os perfis; se created_at não existir, busca só id e nome
     let todosOsPerfis;
-    const { data: perfisComData, error: errData } = await sb.from('profiles').select('id,nome,created_at,is_admin').order('nome');
+    const { data: perfisComData, error: errData } = await sb.from('profiles').select('id,nome,created_at,is_admin,status').order('nome');
     if (errData) {
-      // created_at ainda não existe na tabela — busca sem ela
-      const { data: perfisSemData } = await sb.from('profiles').select('id,nome,is_admin').order('nome');
+      const { data: perfisSemData } = await sb.from('profiles').select('id,nome,is_admin,status').order('nome');
       todosOsPerfis = (perfisSemData || []).map(p => ({ ...p, created_at: null }));
     } else {
       todosOsPerfis = perfisComData || [];
     }
     const usarPerfis = todosOsPerfis && todosOsPerfis.length > 0;
 
-    // Monta a lista de colaboradores a verificar — exclui admins pois não lançam registros
+    // Exclui admins e inativos — eles não precisam lançar registros
     let colaboradoresBase;
     if (usarPerfis) {
-      colaboradoresBase = todosOsPerfis.filter(p => p.nome && !p.is_admin);
+      colaboradoresBase = todosOsPerfis.filter(p => p.nome && !p.is_admin && (p.status || 'ATIVO') === 'ATIVO');
     } else {
       const nomes = [...new Set(dadosAdmin.map(r => r.colaborador))].filter(Boolean).sort();
       colaboradoresBase = nomes.map(n => ({ nome: n, created_at: null }));
@@ -4337,27 +4504,30 @@
     renderGridObras();
   }
 
-  function renderGridObras() {
-    const grid = document.getElementById('grid-obras-admin');
-    const termo = (document.getElementById('busca-obras-admin')?.value || '').trim().toLowerCase();
+  const OBRAS_ADMIN_POR_PAG = 80; // 40 linhas × 2 colunas
+  let obrasAdminPagAtual  = 1;
+  let obrasAdminListaAtual = [];
 
-    let filtradas = obrasCacheAll.filter(o => {
-      const catOk  = !obrasCatFiltro || o.categoria === obrasCatFiltro;
-      const busOk  = !termo || o.nome.toLowerCase().includes(termo);
-      return catOk && busOk;
-    });
+  function irPagObrasAdmin(p) {
+    const totalPags = Math.ceil(obrasAdminListaAtual.length / OBRAS_ADMIN_POR_PAG);
+    if (p < 1 || p > totalPags) return;
+    obrasAdminPagAtual = p;
+    renderGridObrasAdmin();
+    document.getElementById('panel-obras-admin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
-    if (filtradas.length === 0) {
-      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma obra encontrada.</div>';
-      grid.style.cssText = '';
-      return;
-    }
+  function renderGridObrasAdmin() {
+    const grid      = document.getElementById('grid-obras-admin');
+    const pagEl     = document.getElementById('pag-obras-admin');
+    const totalPags = Math.ceil(obrasAdminListaAtual.length / OBRAS_ADMIN_POR_PAG);
+    const inicio    = (obrasAdminPagAtual - 1) * OBRAS_ADMIN_POR_PAG;
+    const pagina    = obrasAdminListaAtual.slice(inicio, inicio + OBRAS_ADMIN_POR_PAG);
 
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     grid.style.gap = '6px';
 
-    grid.innerHTML = filtradas.map(o => `
+    grid.innerHTML = pagina.map(o => `
       <div class="obra-admin-card" data-nome="${escapeHTML(o.nome).toLowerCase()}"
         style="display:flex;align-items:center;justify-content:space-between;
         background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
@@ -4377,16 +4547,36 @@
           </div>
         </div>
         <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
-          <button onclick="visualizarObraAdmin('${o.id}')"
-            class="btn-acao-obra" title="Visualizar">👁</button>
-          <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}','${(o.categoria||'').replace(/'/g,"\\'")}' )"
-            class="btn-acao-obra" title="Editar">✎</button>
-          <button onclick="ocultarObraAdmin('${o.id}',${o.oculto})"
-            class="btn-acao-obra" title="${o.oculto ? 'Mostrar' : 'Ocultar'}">${o.oculto ? '👁' : '🚫'}</button>
-          <button onclick="excluirObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}' )"
-            class="btn-acao-obra" title="Excluir">🗑</button>
+          <button onclick="visualizarObraAdmin('${o.id}')" class="btn-acao-obra" title="Visualizar">👁</button>
+          <button onclick="editarObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}','${(o.categoria||'').replace(/'/g,"\\'")}' )" class="btn-acao-obra" title="Editar">✎</button>
+          <button onclick="ocultarObraAdmin('${o.id}',${o.oculto})" class="btn-acao-obra" title="${o.oculto ? 'Mostrar' : 'Ocultar'}">${o.oculto ? '👁' : '🚫'}</button>
+          <button onclick="excluirObraAdmin('${o.id}','${escapeHTML(o.nome).replace(/'/g,"\\'")}' )" class="btn-acao-obra" title="Excluir">🗑</button>
         </div>
       </div>`).join('');
+
+    if (pagEl) pagEl.innerHTML = paginacaoGridHTML(obrasAdminPagAtual, totalPags, 'irPagObrasAdmin');
+  }
+
+  function renderGridObras() {
+    const grid = document.getElementById('grid-obras-admin');
+    const termo = (document.getElementById('busca-obras-admin')?.value || '').trim().toLowerCase();
+
+    let filtradas = obrasCacheAll.filter(o => {
+      const catOk  = !obrasCatFiltro || o.categoria === obrasCatFiltro;
+      const busOk  = !termo || o.nome.toLowerCase().includes(termo);
+      return catOk && busOk;
+    });
+
+    if (filtradas.length === 0) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma obra encontrada.</div>';
+      grid.style.cssText = '';
+      document.getElementById('pag-obras-admin').innerHTML = '';
+      return;
+    }
+
+    obrasAdminListaAtual = filtradas;
+    obrasAdminPagAtual   = 1;
+    renderGridObrasAdmin();
   }
 
   function filtrarCatObra(cat) {
@@ -4928,37 +5118,85 @@
 
   let dadosEmpresa = []; // cache dos perfis para filtro local
 
+  let empresaAbaAtual = 'ATIVO'; // controla qual aba está visível
+
+  function trocarAbaEmpresa(status) {
+    empresaAbaAtual = status;
+    atualizarContadoresAbasEmpresa();
+    filtrarTabelaEmpresa();
+  }
+
+  function atualizarContadoresAbasEmpresa() {
+    const qtdAtivos   = dadosEmpresa.filter(p => (p.status || 'ATIVO') === 'ATIVO').length;
+    const qtdInativos = dadosEmpresa.filter(p => (p.status || 'ATIVO') === 'INATIVO').length;
+    const estAtivo    = empresaAbaAtual === 'ATIVO';
+
+    const tabAtivos  = document.getElementById('empresa-tab-ativos');
+    const tabInat    = document.getElementById('empresa-tab-inativos');
+    if (!tabAtivos || !tabInat) return;
+
+    tabAtivos.innerHTML  = `✅ Ativos <span style="background:var(--bg3);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;">${qtdAtivos}</span>`;
+    tabInat.innerHTML    = `🔴 Inativos <span style="background:var(--bg3);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;">${qtdInativos}</span>`;
+
+    tabAtivos.style.color        = estAtivo  ? 'var(--accent)' : 'var(--muted)';
+    tabAtivos.style.borderBottom = estAtivo  ? '2px solid var(--accent)' : '2px solid transparent';
+    tabInat.style.color          = !estAtivo ? 'var(--danger)' : 'var(--muted)';
+    tabInat.style.borderBottom   = !estAtivo ? '2px solid var(--danger)' : '2px solid transparent';
+  }
+
+  async function alterarStatusColaborador(id, novoStatus) {
+    // Salva o novo status no banco e atualiza o cache local
+    const { error } = await sb.from('profiles').update({ status: novoStatus }).eq('id', id);
+    if (error) {
+      console.error('Erro ao alterar status:', error);
+      mostrarToast('Erro ao salvar: ' + (error.message || error.code), 'erro');
+      // Reverte o select visualmente
+      await renderPainelEmpresa();
+      return;
+    }
+    // Atualiza cache local
+    const p = dadosEmpresa.find(x => x.id === id);
+    if (p) p.status = novoStatus;
+    mostrarToast(`Status alterado para ${novoStatus}.`, 'ok');
+    atualizarContadoresAbasEmpresa();
+    filtrarTabelaEmpresa();
+    // Sincroniza Por Colaborador se estiver aberto
+    if (document.getElementById('panel-por-colaborador')?.classList.contains('active')) {
+      renderPorColaborador();
+    }
+  }
+
   async function renderPainelEmpresa() {
     const tbody = document.getElementById('empresa-tbody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Carregando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">Carregando...</td></tr>';
 
-    // Busca todos os perfis cadastrados ordenados por nome
+    // Busca todos os perfis incluindo status e id
     const { data, error } = await sb.from('profiles')
-      .select('nome, setor, andar, lider, email, ramal')
+      .select('id, nome, setor, andar, lider, email, ramal, status')
       .order('nome');
 
     if (error || !data) {
-      tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--danger);">Erro ao carregar colaboradores.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--danger);">Erro ao carregar colaboradores.</td></tr>';
       return;
     }
 
     dadosEmpresa = data;
     document.getElementById('empresa-busca').value = '';
+    atualizarContadoresAbasEmpresa();
 
-    // Popula o filtro de setor com valores únicos dos perfis
+    // Popula filtros de setor e andar
     const setores = [...new Set(data.map(p => p.setor).filter(Boolean))].sort();
     const selSetor = document.getElementById('empresa-filtro-setor');
     selSetor.innerHTML = '<option value="">Todos os setores</option>'
       + setores.map(s => `<option>${escapeHTML(s)}</option>`).join('');
 
-    // Popula o filtro de andar com valores únicos dos perfis
     const andares = [...new Set(data.map(p => p.andar).filter(Boolean))].sort();
     const selAndar = document.getElementById('empresa-filtro-andar');
     selAndar.innerHTML = '<option value="">Todos os andares</option>'
       + andares.map(a => `<option>${escapeHTML(a)}</option>`).join('');
 
-    renderLinhasEmpresa(dadosEmpresa);
+    filtrarTabelaEmpresa();
   }
 
   function filtrarTabelaEmpresa() {
@@ -4967,6 +5205,7 @@
     const andar = document.getElementById('empresa-filtro-andar').value;
 
     const filtrado = dadosEmpresa.filter(p =>
+      (p.status || 'ATIVO') === empresaAbaAtual &&
       (!setor || p.setor === setor) &&
       (!andar || p.andar === andar) &&
       (!termo ||
@@ -4983,16 +5222,16 @@
     document.getElementById('empresa-busca').value          = '';
     document.getElementById('empresa-filtro-setor').value   = '';
     document.getElementById('empresa-filtro-andar').value   = '';
-    renderLinhasEmpresa(dadosEmpresa);
+    filtrarTabelaEmpresa();
   }
 
   function exportarEmpresaExcel() {
-    // Exporta a lista atualmente exibida (com filtros aplicados) para Excel
     const termo = document.getElementById('empresa-busca').value.toLowerCase();
     const setor = document.getElementById('empresa-filtro-setor').value;
     const andar = document.getElementById('empresa-filtro-andar').value;
 
     const lista = dadosEmpresa.filter(p =>
+      (p.status || 'ATIVO') === empresaAbaAtual &&
       (!setor || p.setor === setor) &&
       (!andar || p.andar === andar) &&
       (!termo ||
@@ -5003,9 +5242,9 @@
       )
     );
 
-    // Monta as linhas da planilha com cabeçalho
-    const cabecalho = ['Nome', 'Setor', 'Andar', 'Líder / Responsável', 'E-mail', 'Ramal'];
+    const cabecalho = ['Status', 'Nome', 'Setor', 'Andar', 'Líder / Responsável', 'E-mail', 'Ramal'];
     const linhas = lista.map(p => [
+      p.status || 'ATIVO',
       p.nome  || '',
       p.setor || '',
       p.andar || '',
@@ -5015,20 +5254,11 @@
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([cabecalho, ...linhas]);
-
-    // Largura das colunas
-    ws['!cols'] = [
-      { wch: 30 }, // Nome
-      { wch: 20 }, // Setor
-      { wch: 14 }, // Andar
-      { wch: 25 }, // Líder
-      { wch: 30 }, // E-mail
-      { wch: 10 }, // Ramal
-    ];
+    ws['!cols'] = [{ wch: 10 },{ wch: 30 },{ wch: 20 },{ wch: 14 },{ wch: 25 },{ wch: 30 },{ wch: 10 }];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
-    XLSX.writeFile(wb, `colaboradores_${toLocalISO(new Date())}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, empresaAbaAtual === 'ATIVO' ? 'Ativos' : 'Inativos');
+    XLSX.writeFile(wb, `colaboradores_${empresaAbaAtual.toLowerCase()}_${toLocalISO(new Date())}.xlsx`);
   }
 
   function renderLinhasEmpresa(lista) {
@@ -5036,19 +5266,30 @@
     document.getElementById('empresa-total').textContent = lista.length + ' colaborador(es)';
 
     if (!lista.length) {
-      tbody.innerHTML = '<tr><td colspan="6"><div style="padding:24px;text-align:center;color:var(--muted);">Nenhum colaborador encontrado.</div></td></tr>';
+      tbody.innerHTML = `<tr><td colspan="7"><div style="padding:24px;text-align:center;color:var(--muted);">Nenhum colaborador ${empresaAbaAtual === 'ATIVO' ? 'ativo' : 'inativo'} encontrado.</div></td></tr>`;
       return;
     }
 
-    tbody.innerHTML = lista.map((p, i) => `
-      <tr style="background:${i % 2 === 0 ? 'transparent' : 'var(--bg2)'};border-bottom:1px solid var(--border);">
-        <td style="padding:10px 12px;color:var(--text);font-weight:500;">${escapeHTML(p.nome || '—')}</td>
-        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.setor || '—')}</td>
-        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.andar || '—')}</td>
-        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.lider || '—')}</td>
-        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.email || '—')}</td>
-        <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.ramal || '—')}</td>
-      </tr>`).join('');
+    tbody.innerHTML = lista.map((p, i) => {
+      const status = p.status || 'ATIVO';
+      const corStatus = status === 'ATIVO' ? 'var(--success)' : 'var(--danger)';
+      return `
+        <tr style="background:${i % 2 === 0 ? 'transparent' : 'var(--bg2)'};border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;">
+            <select onchange="alterarStatusColaborador('${p.id}', this.value)"
+              style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:${corStatus};padding:3px 8px;font-size:11px;font-weight:700;font-family:var(--font);outline:none;cursor:pointer;">
+              <option value="ATIVO"   ${status === 'ATIVO'   ? 'selected' : ''}>✅ ATIVO</option>
+              <option value="INATIVO" ${status === 'INATIVO' ? 'selected' : ''}>🔴 INATIVO</option>
+            </select>
+          </td>
+          <td style="padding:10px 12px;color:var(--text);font-weight:500;">${escapeHTML(p.nome || '—')}</td>
+          <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.setor || '—')}</td>
+          <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.andar || '—')}</td>
+          <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.lider || '—')}</td>
+          <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.email || '—')}</td>
+          <td style="padding:10px 12px;color:var(--muted);">${escapeHTML(p.ramal || '—')}</td>
+        </tr>`;
+    }).join('');
   }
 
   // ═══════════════════════════════════════════════════
@@ -5487,6 +5728,145 @@
   }
 
   // ─── BACKUP COMPLETO ────────────────────────────────
+  // ═══════════════════════════════════════════════════
+  // MODAL DE EXPORTAÇÃO AVANÇADA
+  // ═══════════════════════════════════════════════════
+
+  let expCategoriaAtual = 'colaboradores';
+  let expItensCache     = []; // lista completa da categoria atual
+  let expTodosRegistros = []; // cache de todos os registros do banco
+
+  async function abrirModalExportacao() {
+    document.getElementById('modal-exportacao').style.display = 'block';
+    mostrarLoading(true);
+    // Carrega todos os registros uma única vez
+    if (!expTodosRegistros.length) {
+      const { data } = await sb.from('registros').select('*').order('data', { ascending: false });
+      expTodosRegistros = data || [];
+    }
+    mostrarLoading(false);
+    trocarAbaExportacao('colaboradores', document.getElementById('exp-tab-colaboradores'));
+  }
+
+  function fecharModalExportacao() {
+    document.getElementById('modal-exportacao').style.display = 'none';
+    expTodosRegistros = []; // limpa cache ao fechar
+  }
+
+  function trocarAbaExportacao(cat, btn) {
+    expCategoriaAtual = cat;
+    document.querySelectorAll('.exp-tab').forEach(t => t.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.getElementById('exp-busca').value = '';
+    document.getElementById('exp-marcar-todos').checked = false;
+    carregarItensExportacao();
+  }
+
+  function carregarItensExportacao() {
+    // Monta a lista de itens conforme a categoria selecionada
+    if (expCategoriaAtual === 'colaboradores') {
+      expItensCache = [...new Set(expTodosRegistros.map(r => r.colaborador).filter(Boolean))].sort();
+    } else if (expCategoriaAtual === 'obras') {
+      expItensCache = [...new Set(expTodosRegistros.map(r => r.obra).filter(Boolean))].sort();
+    } else if (expCategoriaAtual === 'setores') {
+      expItensCache = [...new Set(expTodosRegistros.map(r => r.setor).filter(Boolean))].sort();
+    } else if (expCategoriaAtual === 'disciplinas') {
+      expItensCache = [...new Set(expTodosRegistros.map(r => r.disciplina).filter(Boolean))].sort();
+    }
+    exportacaoRenderLista(expItensCache);
+  }
+
+  function exportacaoRenderLista(itens) {
+    const lista = document.getElementById('exp-lista');
+    const selecionados = exportacaoGetSelecionados();
+
+    lista.innerHTML = itens.map(item => `
+      <label class="exp-item">
+        <input type="checkbox" class="exp-check" value="${escapeHTML(item)}"
+          ${selecionados.has(item) ? 'checked' : ''}
+          onchange="exportacaoAtualizarContador()" />
+        ${escapeHTML(item)}
+      </label>`).join('');
+
+    exportacaoAtualizarContador();
+  }
+
+  function exportacaoGetSelecionados() {
+    const checks = document.querySelectorAll('.exp-check:checked');
+    return new Set([...checks].map(c => c.value));
+  }
+
+  function exportacaoAtualizarContador() {
+    const total = document.querySelectorAll('.exp-check').length;
+    const sel   = document.querySelectorAll('.exp-check:checked').length;
+    document.getElementById('exp-contador').textContent = `${sel} de ${total} selecionado(s)`;
+    document.getElementById('exp-marcar-todos').checked = sel === total && total > 0;
+  }
+
+  function exportacaoMarcarTodos(checked) {
+    document.querySelectorAll('.exp-check').forEach(c => c.checked = checked);
+    exportacaoAtualizarContador();
+  }
+
+  function exportacaoFiltrar() {
+    const termo = document.getElementById('exp-busca').value.toLowerCase();
+    const filtrado = expItensCache.filter(i => i.toLowerCase().includes(termo));
+    exportacaoRenderLista(filtrado);
+  }
+
+  async function executarExportacao() {
+    const selecionados = [...exportacaoGetSelecionados()];
+    if (!selecionados.length) { mostrarToast('Selecione ao menos um item.', 'aviso'); return; }
+
+    const modoJuntos    = document.getElementById('exp-modo-juntos')?.checked;
+    const modoSeparados = document.getElementById('exp-modo-separados')?.checked;
+
+    if (!modoJuntos && !modoSeparados) { mostrarToast('Selecione ao menos um modo de exportação.', 'aviso'); return; }
+
+    const campo = expCategoriaAtual === 'colaboradores' ? 'colaborador'
+                : expCategoriaAtual === 'obras'         ? 'obra'
+                : expCategoriaAtual === 'setores'       ? 'setor'
+                : 'disciplina';
+
+    const hoje    = toLocalISO(new Date());
+    const nomeCat = expCategoriaAtual;
+
+    mostrarLoading(true);
+
+    // ── Exportar Juntos ──
+    if (modoJuntos) {
+      const wb = XLSX.utils.book_new();
+      selecionados.forEach(item => {
+        const regs   = expTodosRegistros.filter(r => r[campo] === item);
+        const linhas = registrosParaLinhas(regs);
+        const ws     = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhas]);
+        aplicarFormatoHoras(ws, linhas.length + 1);
+        estilizarPlanilha(ws);
+        XLSX.utils.book_append_sheet(wb, ws, item.substring(0, 31));
+      });
+      XLSX.writeFile(wb, `exportacao_${nomeCat}_${hoje}.xlsx`);
+    }
+
+    // ── Exportar Separados ──
+    if (modoSeparados) {
+      for (const item of selecionados) {
+        const regs   = expTodosRegistros.filter(r => r[campo] === item);
+        const linhas = registrosParaLinhas(regs);
+        const wb     = XLSX.utils.book_new();
+        const ws     = XLSX.utils.aoa_to_sheet([CAB_EXCEL, ...linhas]);
+        aplicarFormatoHoras(ws, linhas.length + 1);
+        estilizarPlanilha(ws);
+        XLSX.utils.book_append_sheet(wb, ws, item.substring(0, 31));
+        XLSX.writeFile(wb, `${nomeCat}_${item.replace(/\s+/g,'_').substring(0,30)}_${hoje}.xlsx`);
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    const modos = [modoJuntos && 'juntos', modoSeparados && 'separados'].filter(Boolean).join(' e ');
+    mostrarToast(`Exportado ${modos}! ${selecionados.length} item(s).`);
+    mostrarLoading(false);
+  }
+
   async function gerarBackupExcel() {
     mostrarToast('Gerando backup... aguarde.');
     mostrarLoading(true);
@@ -7050,5 +7430,60 @@
     if (e.key === 'Enter') enviarMensagem();
   });
 </script>
+  <!-- MODAL: EXPORTAÇÃO AVANÇADA -->
+  <div id="modal-exportacao" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;max-width:680px;margin:40px auto;position:relative;">
+
+      <!-- Cabeçalho -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;">
+        <div style="font-size:15px;font-weight:700;color:var(--text);">📦 Exportar Dados</div>
+        <button onclick="fecharModalExportacao()" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+
+      <!-- Abas de categoria -->
+      <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid var(--border);">
+        <button class="exp-tab ativo" id="exp-tab-colaboradores" onclick="trocarAbaExportacao('colaboradores',this)">👤 Colaboradores</button>
+        <button class="exp-tab" id="exp-tab-obras"         onclick="trocarAbaExportacao('obras',this)">🏗 Obras</button>
+        <button class="exp-tab" id="exp-tab-setores"       onclick="trocarAbaExportacao('setores',this)">🏢 Setores</button>
+        <button class="exp-tab" id="exp-tab-disciplinas"   onclick="trocarAbaExportacao('disciplinas',this)">📋 Disciplinas</button>
+      </div>
+
+      <!-- Barra de ações -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" id="exp-marcar-todos" onchange="exportacaoMarcarTodos(this.checked)" />
+            Marcar todos
+          </label>
+          <span id="exp-contador" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+        <input type="text" id="exp-busca" placeholder="Buscar..." oninput="exportacaoFiltrar()"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:5px 10px;font-size:12px;font-family:var(--font);outline:none;width:180px;" />
+      </div>
+
+      <!-- Lista de itens -->
+      <div id="exp-lista" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:1rem;"></div>
+
+      <!-- Rodapé -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid var(--border);padding-top:1rem;">
+        <div style="display:flex;gap:16px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="exp-modo-juntos" checked />
+            Juntos (1 arquivo)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="exp-modo-separados" />
+            Separados (1 por item)
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-filter" onclick="fecharModalExportacao()">Cancelar</button>
+          <button class="btn-add" onclick="executarExportacao()">↓ Exportar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </body>
 </html>

@@ -1059,9 +1059,17 @@
             <button type="button" class="btn-checkin" onclick="preencherCheckin('REUNIAO DE EQUIPE')">👥 Reunião de Equipe</button>
           </div>
         </div>
-        <div class="field">
+        <div class="field" id="field-data-simples">
           <label>Data</label>
           <input type="date" id="inp-data" />
+        </div>
+        <div class="field" id="field-data-periodo" style="display:none;">
+          <label>Período</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="date" id="inp-data-de"  style="flex:1;" />
+            <span style="font-size:11px;color:var(--muted);">até</span>
+            <input type="date" id="inp-data-ate" style="flex:1;" />
+          </div>
         </div>
         <div class="field">
           <label>Horas</label>
@@ -2454,51 +2462,85 @@
   async function adicionarRegistro() {
     const colaborador = document.getElementById('inp-colab').value.trim();
     const obra        = document.getElementById('inp-obra').value.trim();
-    const data        = document.getElementById('inp-data').value;
     const horaStr     = document.getElementById('inp-horas').value.trim();
     const obs         = document.getElementById('inp-obs').value.trim();
     const disciplina  = document.getElementById('inp-disciplina').value;
     const tarefa      = document.getElementById('inp-tarefa').value.trim();
 
-    if (!colaborador || !obra || !data || !horaStr) {
-      mostrarToast('Preencha todos os campos obrigatórios.', 'erro'); return;
-    }
-    if (!horaValida(horaStr)) {
-      mostrarToast('Hora inválida. Ex: 8:30', 'erro'); return;
+    // Verifica se é Férias com período De/Até
+    const ehPeriodo = obra === 'FERIAS' &&
+      document.getElementById('field-data-periodo').style.display !== 'none';
+
+    let datas = []; // lista de datas a inserir
+
+    if (ehPeriodo) {
+      const de  = document.getElementById('inp-data-de').value;
+      const ate = document.getElementById('inp-data-ate').value;
+      if (!colaborador || !obra || !de || !ate || !horaStr) {
+        mostrarToast('Preencha todos os campos obrigatórios.', 'erro'); return;
+      }
+      if (de > ate) {
+        mostrarToast('A data "De" não pode ser maior que "Até".', 'erro'); return;
+      }
+      if (!horaValida(horaStr)) {
+        mostrarToast('Hora inválida. Ex: 8:00', 'erro'); return;
+      }
+      // Gera todas as datas do intervalo
+      let cur = new Date(de + 'T12:00:00');
+      const fim = new Date(ate + 'T12:00:00');
+      while (cur <= fim) {
+        datas.push(toLocalISO(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+    } else {
+      const data = document.getElementById('inp-data').value;
+      if (!colaborador || !obra || !data || !horaStr) {
+        mostrarToast('Preencha todos os campos obrigatórios.', 'erro'); return;
+      }
+      if (!horaValida(horaStr)) {
+        mostrarToast('Hora inválida. Ex: 8:30', 'erro'); return;
+      }
+      datas = [data];
     }
 
     const horas = horaParaDecimal(horaStr);
     mostrarLoading(true);
 
-    const payload = {
-      user_id: currentUser.id,
-      colaborador, obra, data,
-      horas, obs: obs || null,
-      setor: perfil.setor || null,
-      disciplina: disciplina || null,
-      tarefa: tarefa || null
-    };
-    if (horaStr) payload.hora_str = horaStr;
-
-    const { data: novo, error } = await sb.from('registros').insert(payload).select().single();
-
-    if (error) {
-      mostrarToast('Erro: ' + (error.message || error.code || 'verifique o console'), 'erro');
-      console.error('Erro ao inserir registro:', error);
-      mostrarLoading(false);
-      return;
+    // Insere um registro por data
+    const inseridos = [];
+    for (const data of datas) {
+      const payload = {
+        user_id: currentUser.id,
+        colaborador, obra, data,
+        horas, hora_str: horaStr,
+        obs: obs || null,
+        setor: perfil.setor || null,
+        disciplina: disciplina || null,
+        tarefa: tarefa || null
+      };
+      const { data: novo, error } = await sb.from('registros').insert(payload).select().single();
+      if (error) {
+        mostrarToast(`Erro ao inserir ${data}: ` + (error.message || error.code), 'erro');
+        console.error('Erro ao inserir registro:', error);
+        mostrarLoading(false);
+        return;
+      }
+      inseridos.push(novo);
     }
 
-    dados.unshift(novo);
+    dados.unshift(...inseridos);
     document.getElementById('inp-obra').value       = '';
     document.getElementById('inp-horas').value      = '';
     document.getElementById('inp-obs').value        = '';
     document.getElementById('inp-disciplina').value = '';
-    document.getElementById('inp-tarefa').value        = '';
+    document.getElementById('inp-tarefa').value     = '';
     document.getElementById('inp-horas').style.borderColor = '';
+    // Restaura campo de data simples
+    document.getElementById('field-data-simples').style.display  = '';
+    document.getElementById('field-data-periodo').style.display  = 'none';
 
     renderTudo();
-    mostrarToast('Registro adicionado!');
+    mostrarToast(datas.length > 1 ? `${datas.length} registros de férias adicionados!` : 'Registro adicionado!');
     atualizarListaTarefas();
     mostrarLoading(false);
   }
@@ -2581,6 +2623,9 @@
     document.getElementById('inp-horas').value      = '';
     document.getElementById('inp-obs').value        = '';
     document.getElementById('inp-disciplina').value = '';
+    // Restaura campo de data simples
+    document.getElementById('field-data-simples').style.display = '';
+    document.getElementById('field-data-periodo').style.display = 'none';
     renderTabela();
   }
 
@@ -4448,7 +4493,21 @@
     document.getElementById('inp-disciplina').value = 'OUTRA';
     document.getElementById('inp-obs').value        = tipo;
     document.getElementById('inp-horas').value      = '';
-    document.getElementById('inp-horas').focus();
+
+    // Férias usa campo De/Até — demais usam data simples
+    const ehFerias = tipo === 'FERIAS';
+    document.getElementById('field-data-simples').style.display  = ehFerias ? 'none' : '';
+    document.getElementById('field-data-periodo').style.display  = ehFerias ? '' : 'none';
+
+    if (ehFerias) {
+      // Preenche De com hoje por padrão
+      const hoje = toLocalISO(new Date());
+      document.getElementById('inp-data-de').value  = hoje;
+      document.getElementById('inp-data-ate').value = '';
+      document.getElementById('inp-data-de').focus();
+    } else {
+      document.getElementById('inp-horas').focus();
+    }
   }
 
   // ─── CADASTRO DE OBRAS (ADMIN) ──────────────────────

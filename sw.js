@@ -8,8 +8,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body:    data.body    || '',
-    icon:    data.icon    || '/favicon.ico',
-    badge:   data.badge   || '/favicon.ico',
+    icon:    data.icon    || './favicon.ico',
+    badge:   data.badge   || './favicon.ico',
     tag:     data.tag     || 'viavoz',
     renotify: true,
     requireInteraction: false,
@@ -26,8 +26,10 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // so foca a janela do proprio sistema: sem o teste de URL,
+      // qualquer aba aberta pelo service worker era focada.
       for (const client of clientList) {
-        if (client.url && 'focus' in client) {
+        if (client.url && client.url.includes('registro-horas') && 'focus' in client) {
           return client.focus();
         }
       }

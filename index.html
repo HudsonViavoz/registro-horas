@@ -2407,42 +2407,70 @@
   // ═══════════════════════════════════════════════════
   // DADOS (CRUD com Supabase)
   // ═══════════════════════════════════════════════════
-  async function carregarDados() {
-    // Busca todos os registros sem limite (Supabase limita 1000 por padrão)
-    let todos = [];
-    let from = 0;
+  // ═══════════════════════════════════════════════════════════════
+  // LEITURA DE TODOS OS REGISTROS
+  //
+  // O Supabase devolve no maximo 1000 linhas por consulta, entao a
+  // leitura precisa ser paginada. A ordenacao usada para paginar TEM
+  // de ser por uma coluna unica.
+  //
+  // Antes era `.order('data')`: a mesma data se repete centenas de
+  // vezes, o Postgres nao garante a ordem entre linhas empatadas de
+  // uma consulta para outra, e cada pagina e uma consulta nova. Com
+  // isso algumas linhas vinham em duas paginas e outras em nenhuma —
+  // 79 repetidas e 79 perdidas em 10.471 registros, mudando a cada
+  // carregamento. `id` e unico: nao empata, e a paginacao fica estavel.
+  //
+  // A ordenacao por data continua acontecendo na tela: todas as
+  // funcoes de render reagrupam os dados antes de exibir.
+  // ═══════════════════════════════════════════════════════════════
+  async function lerTodosRegistros(ajustarConsulta) {
     const tamanho = 1000;
+    const vistos  = new Set();
+    let todos = [];
+    let from  = 0;
+
     while (true) {
-      const { data, error } = await sb.from('registros')
+      let q = sb.from('registros')
         .select('*')
-        .eq('user_id', currentUser.id)
-        .order('data', { ascending: false })
+        .order('id', { ascending: true })
         .range(from, from + tamanho - 1);
-      if (error || !data || data.length === 0) break;
-      todos = todos.concat(data);
+      if (ajustarConsulta) q = ajustarConsulta(q);
+
+      const { data, error } = await q;
+      if (error) { console.error('Erro ao ler registros:', error); break; }
+      if (!data || data.length === 0) break;
+
+      // rede de seguranca: nenhuma linha pode entrar duas vezes
+      for (const r of data) {
+        if (vistos.has(r.id)) continue;
+        vistos.add(r.id);
+        todos.push(r);
+      }
+
       if (data.length < tamanho) break;
       from += tamanho;
     }
-    dados = todos;
+    return todos;
+  }
+
+  async function carregarDados() {
+    dados = await lerTodosRegistros(q => q.eq('user_id', currentUser.id));
   }
 
   async function carregarDadosAdmin() {
     mostrarLoading(true);
-    // Busca todos os registros em páginas de 1000 (Supabase limita 1000 por padrão)
-    let todos = [];
-    let from = 0;
-    const tamanho = 1000;
-    while (true) {
-      const { data, error } = await sb.from('registros')
-        .select('*')
-        .order('data', { ascending: false })
-        .range(from, from + tamanho - 1);
-      if (error || !data || data.length === 0) break;
-      todos = todos.concat(data);
-      if (data.length < tamanho) break;
-      from += tamanho;
-    }
-    dadosAdmin = todos;
+    dadosAdmin = await lerTodosRegistros();
+
+    // Confere se veio do banco tudo o que ele diz ter. So avisa no
+    // console — nao interrompe nada.
+    try {
+      const { count } = await sb.from('registros')
+        .select('id', { count: 'exact', head: true });
+      if (count != null && count !== dadosAdmin.length) {
+        console.warn('Leitura incompleta: carregados', dadosAdmin.length, 'de', count);
+      }
+    } catch (e) { /* segue mesmo sem a contagem */ }
 
     // Preenche os autocomplete de colaborador e obra do painel admin
     const colabs = [...new Set(dadosAdmin.map(r => r.colaborador))].sort();
@@ -5743,7 +5771,9 @@
 
   // Converte lista de registros para linhas + linha de total no final
   function registrosParaLinhas(lista) {
-    const linhas = lista
+    // copia antes de ordenar: .sort() altera o array no lugar, e a lista
+    // que chega aqui e o proprio dadosAdmin / expTodosRegistros.
+    const linhas = [...lista]
       .sort((a,b) => a.data.localeCompare(b.data))
       .map(r => [
         formatarData(r.data),
@@ -5822,20 +5852,7 @@
     mostrarLoading(true);
     // Carrega todos os registros sem limite de 1000
     if (!expTodosRegistros.length) {
-      let todos = [];
-      let from = 0;
-      const tamanho = 1000;
-      while (true) {
-        const { data, error } = await sb.from('registros')
-          .select('*')
-          .order('data', { ascending: false })
-          .range(from, from + tamanho - 1);
-        if (error || !data || data.length === 0) break;
-        todos = todos.concat(data);
-        if (data.length < tamanho) break;
-        from += tamanho;
-      }
-      expTodosRegistros = todos;
+      expTodosRegistros = await lerTodosRegistros();
     }
     mostrarLoading(false);
     trocarAbaExportacao('colaboradores', document.getElementById('exp-tab-colaboradores'));
@@ -5964,7 +5981,9 @@
     mostrarToast('Gerando backup... aguarde.');
     mostrarLoading(true);
     try {
-      const { data: todos } = await sb.from('registros').select('*').order('data', { ascending: false });
+      // Sem paginacao esta consulta trazia no maximo 1000 linhas: o
+      // arquivo de backup saia com menos de 10% do sistema, sem avisar.
+      const todos = await lerTodosRegistros();
       if (!todos || todos.length === 0) { mostrarToast('Nenhum registro encontrado.', 'info'); return; }
       const hoje = toLocalISO(new Date());
       const wb  = XLSX.utils.book_new();
@@ -6051,8 +6070,10 @@
       const [{ data: obras }, { data: perfis }, { data: regs }] = await Promise.all([
         sb.from('obras').select('nome,status,sigla_cidade,cliente_estado').eq('ativo', true),
         sb.from('profiles').select('id').not('nome','is',null),
-        sb.from('registros').select('horas,obra,disciplina,setor')
-          .gte('data', de || '2000-01-01').lte('data', ate || toLocalISO(new Date()))
+        lerTodosRegistros(q => q
+          .gte('data', de || '2000-01-01')
+          .lte('data', ate || toLocalISO(new Date())))
+          .then(data => ({ data }))
       ]);
 
       const ESPECIAIS = new Set(['ATESTADO','FALTA','FERIADO','FERIAS','REUNIAO DE EQUIPE']);
@@ -6267,8 +6288,9 @@
 
   function decimalParaHora(dec) {
     if (dec == null || isNaN(dec)) return '0:00';
-    const h = Math.floor(dec);
-    const m = Math.round((dec - h) * 60);
+    let h = Math.floor(dec);
+    let m = Math.round((dec - h) * 60);
+    if (m === 60) { h++; m = 0; }   // 7.999 imprimia "7:60" em vez de "8:00"
     return `${h}:${String(m).padStart(2,'0')}`;
   }
 
@@ -6431,7 +6453,9 @@
 
     try {
       // Registra o Service Worker
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      // sem a barra inicial: com ela o caminho vira hudsonviavoz.github.io/sw.js,
+      // que nao existe. O arquivo esta em /registro-horas/sw.js.
+      const reg = await navigator.serviceWorker.register('sw.js');
 
       // Pede permissão se ainda não foi dada
       const perm = await Notification.requestPermission();
